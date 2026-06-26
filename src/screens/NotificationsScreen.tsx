@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import NotificationsHeader from '../components/NotificationsHeader';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { RootStackParamList } from '../types';
 
@@ -61,10 +62,10 @@ const SOLID_TINTS: Record<string, { pill: string; icon: string; cta: string; chi
 const getSolidTints = (color: string) =>
   SOLID_TINTS[color] ?? { pill: '#F1F5F9', icon: '#E2E8F0', cta: '#F8FAFC', chip: '#F1F5F9' };
 
-const FILTER_TABS: { key: FilterTab; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'unread', label: 'Unread' },
-  { key: 'alerts', label: 'Alerts' },
+const FILTER_TAB_KEYS: { key: FilterTab; labelKey: string }[] = [
+  { key: 'all', labelKey: 'notifications.filterAll' },
+  { key: 'unread', labelKey: 'notifications.filterUnread' },
+  { key: 'alerts', labelKey: 'notifications.filterAlerts' },
 ];
 
 const ALERT_TYPES = new Set([
@@ -305,7 +306,9 @@ const getAlertPresentation = (item: Notification): AlertPresentation => {
   }
 };
 
-const getDateGroup = (dateString: string): string => {
+type DateGroupKey = 'today' | 'yesterday' | 'thisWeek' | 'earlier';
+
+const getDateGroupKey = (dateString: string): DateGroupKey => {
   const date = new Date(dateString);
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -314,29 +317,46 @@ const getDateGroup = (dateString: string): string => {
   const startOfWeek = new Date(startOfToday);
   startOfWeek.setDate(startOfWeek.getDate() - 7);
 
-  if (date >= startOfToday) return 'Today';
-  if (date >= startOfYesterday) return 'Yesterday';
-  if (date >= startOfWeek) return 'This Week';
-  return 'Earlier';
+  if (date >= startOfToday) return 'today';
+  if (date >= startOfYesterday) return 'yesterday';
+  if (date >= startOfWeek) return 'thisWeek';
+  return 'earlier';
 };
 
-const groupNotificationsByDate = (items: Notification[]): NotificationSection[] => {
-  const groups = new Map<string, Notification[]>();
-  const order = ['Today', 'Yesterday', 'This Week', 'Earlier'];
+const DATE_GROUP_ORDER: DateGroupKey[] = ['today', 'yesterday', 'thisWeek', 'earlier'];
+
+const getDateGroupLabel = (key: DateGroupKey, t: (labelKey: string) => string): string => {
+  switch (key) {
+    case 'today':
+      return t('common.today');
+    case 'yesterday':
+      return t('common.yesterday');
+    case 'thisWeek':
+      return 'This Week';
+    case 'earlier':
+      return 'Earlier';
+  }
+};
+
+const groupNotificationsByDate = (
+  items: Notification[],
+  t: (labelKey: string) => string,
+): NotificationSection[] => {
+  const groups = new Map<DateGroupKey, Notification[]>();
 
   for (const item of items) {
-    const group = getDateGroup(item.created_at);
+    const group = getDateGroupKey(item.created_at);
     const existing = groups.get(group) || [];
     existing.push(item);
     groups.set(group, existing);
   }
 
-  return order
-    .filter((title) => groups.has(title))
-    .map((title) => ({ title, data: groups.get(title)! }));
+  return DATE_GROUP_ORDER
+    .filter((key) => groups.has(key))
+    .map((key) => ({ title: getDateGroupLabel(key, t), data: groups.get(key)! }));
 };
 
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString: string, t: (labelKey: string) => string): string => {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -344,7 +364,7 @@ const formatDate = (dateString: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Just now';
+  if (diffMins < 1) return t('common.justNow');
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
@@ -352,6 +372,7 @@ const formatDate = (dateString: string): string => {
 };
 
 export default function NotificationsScreen({ navigation }: NotificationsScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -553,8 +574,8 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
   }, [notifications, activeFilter]);
 
   const sections = useMemo(
-    () => groupNotificationsByDate(filteredNotifications),
-    [filteredNotifications]
+    () => groupNotificationsByDate(filteredNotifications, t),
+    [filteredNotifications, t]
   );
 
   const markAsRead = async (notificationId: string) => {
@@ -640,7 +661,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
 
       if (error) {
         console.error('Error marking all as read:', error);
-        Alert.alert('Error', 'Failed to mark all notifications as read.');
+        Alert.alert(t('common.error'), t('notifications.alertMarkAllReadFailed'));
         return;
       }
 
@@ -648,7 +669,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all as read:', error);
-      Alert.alert('Error', 'Failed to mark all notifications as read.');
+      Alert.alert(t('common.error'), t('notifications.alertMarkAllReadFailed'));
     }
   };
 
@@ -812,7 +833,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
                 {presentation.headline.toUpperCase()}
               </Text>
             </View>
-            <Text style={styles.emergencyTime}>{formatDate(item.created_at)}</Text>
+            <Text style={styles.emergencyTime}>{formatDate(item.created_at, t)}</Text>
           </View>
 
           <View style={styles.emergencyMain}>
@@ -948,7 +969,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
                 <View style={styles.listMetaRow}>
                   <Text style={[styles.categoryText, { color: iconColor }]}>{categoryLabel}</Text>
                   <View style={styles.metaDot} />
-                  <Text style={styles.timeText}>{formatDate(item.created_at)}</Text>
+                  <Text style={styles.timeText}>{formatDate(item.created_at, t)}</Text>
                 </View>
               </View>
 
@@ -1001,10 +1022,10 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
   const renderEmpty = () => {
     const emptyCopy =
       activeFilter === 'unread'
-        ? { title: 'All caught up', text: 'You have no unread notifications.' }
+        ? { title: t('notifications.emptyAllCaughtUpTitle'), text: t('notifications.emptyAllCaughtUpText') }
         : activeFilter === 'alerts'
-          ? { title: 'No alerts', text: 'Safety alerts and emergencies will appear here.' }
-          : { title: 'No notifications yet', text: 'Updates from your connections and safety alerts will show up here.' };
+          ? { title: t('notifications.emptyNoAlertsTitle'), text: t('notifications.emptyNoAlertsText') }
+          : { title: t('notifications.emptyNoNotificationsTitle'), text: t('notifications.emptyNoNotificationsText') };
 
     return (
       <View style={styles.emptyContainer}>
@@ -1033,7 +1054,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
 
       <View style={styles.filterPanel}>
         <View style={styles.filterRow}>
-          {FILTER_TABS.map((tab) => {
+          {FILTER_TAB_KEYS.map((tab) => {
             const isActive = activeFilter === tab.key;
             const count =
               tab.key === 'unread'
@@ -1050,7 +1071,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
                 activeOpacity={0.75}
               >
                 <Text style={[styles.filterSegmentText, isActive && styles.filterSegmentTextActive]}>
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </Text>
                 {count > 0 ? (
                   <Text style={[styles.filterSegmentCount, isActive && styles.filterSegmentCountActive]}>
@@ -1066,7 +1087,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2563EB" />
-          <Text style={styles.loadingText}>Loading notifications...</Text>
+          <Text style={styles.loadingText}>{t('common.loadingNotifications')}</Text>
         </View>
       ) : filteredNotifications.length === 0 ? (
         renderEmpty()

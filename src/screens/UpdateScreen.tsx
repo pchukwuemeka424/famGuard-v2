@@ -11,12 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { useTranslation } from '../context/LanguageContext';
 
 interface UpdateScreenProps {
   onUpdate?: () => void;
 }
 
 export default function UpdateScreen({ onUpdate }: UpdateScreenProps) {
+  const { t } = useTranslation();
   const currentVersion = Constants.expoConfig?.version || '1.0.1';
   
   const handleUpdatePress = async () => {
@@ -71,20 +73,16 @@ export default function UpdateScreen({ onUpdate }: UpdateScreenProps) {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Update Required</Text>
+        <Text style={styles.title}>{t('update.title')}</Text>
         
         {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          A new version of FamGuard is available
-        </Text>
+        <Text style={styles.subtitle}>{t('update.subtitle')}</Text>
 
         {/* Message */}
         <View style={styles.messageContainer}>
-          <Text style={styles.messageText}>
-            Please update to the latest version to continue using the app and access new features.
-          </Text>
+          <Text style={styles.messageText}>{t('update.message')}</Text>
           <Text style={styles.versionText}>
-            Current Version: {currentVersion}
+            {t('update.currentVersion', { version: currentVersion })}
           </Text>
         </View>
 
@@ -95,12 +93,12 @@ export default function UpdateScreen({ onUpdate }: UpdateScreenProps) {
           activeOpacity={0.8}
         >
           <Ionicons name="cloud-download-outline" size={24} color="#FFFFFF" />
-          <Text style={styles.updateButtonText}>Update Now</Text>
+          <Text style={styles.updateButtonText}>{t('update.updateNow')}</Text>
         </TouchableOpacity>
 
         {/* Info Text */}
         <Text style={styles.infoText}>
-          The app will automatically open the {Platform.OS === 'ios' ? 'App Store' : 'Play Store'} for you
+          {Platform.OS === 'ios' ? t('update.storeInfoIos') : t('update.storeInfoAndroid')}
         </Text>
       </View>
     </SafeAreaView>

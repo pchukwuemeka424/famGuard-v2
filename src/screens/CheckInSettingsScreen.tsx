@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useCheckIn } from '../context/CheckInContext';
+import { useTranslation } from '../context/LanguageContext';
 import type { RootStackParamList, CheckInSettings } from '../types';
 
 type CheckInSettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'CheckInSettings'>;
@@ -24,6 +25,7 @@ interface CheckInSettingsScreenProps {
 }
 
 export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScreenProps) {
+  const { t } = useTranslation();
   const { settings, loading, updateSettings, loadSettings } = useCheckIn();
   const [localSettings, setLocalSettings] = useState<Partial<CheckInSettings>>({});
   const [saving, setSaving] = useState<boolean>(false);
@@ -46,13 +48,13 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
       setSaving(true);
       const success = await updateSettings(localSettings);
       if (success) {
-        Alert.alert('Success', 'Settings saved successfully.');
+        Alert.alert(t('common.success'), t('checkInSettings.alertSettingsSaved'));
         navigation.goBack();
       } else {
-        Alert.alert('Error', 'Failed to save settings. Please try again.');
+        Alert.alert(t('common.error'), t('checkInSettings.alertSettingsSaveFailed'));
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred. Please try again.');
+      Alert.alert(t('common.error'), t('home.alertGenericError'));
     } finally {
       setSaving(false);
     }
@@ -79,7 +81,7 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
         >
           <Ionicons name="arrow-back" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Check-in Settings</Text>
+        <Text style={styles.headerTitle}>{t('checkInSettings.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -88,9 +90,9 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
         <View style={styles.section}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Enable Check-ins</Text>
+              <Text style={styles.settingTitle}>{t('checkInSettings.enableCheckIns')}</Text>
               <Text style={styles.settingDescription}>
-                Allow periodic safety check-ins
+                {t('checkInSettings.enableCheckInsDescription')}
               </Text>
             </View>
             <Switch
@@ -104,9 +106,9 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
 
         {/* Check-in Interval */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Check-in Interval</Text>
+          <Text style={styles.sectionTitle}>{t('checkInSettings.checkInInterval')}</Text>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Interval (minutes)</Text>
+            <Text style={styles.inputLabel}>{t('checkInSettings.intervalMinutes')}</Text>
             <TextInput
               style={styles.input}
               value={localSettings.checkInIntervalMinutes?.toString() || '60'}
@@ -120,7 +122,7 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
               placeholderTextColor="#9CA3AF"
             />
             <Text style={styles.inputHint}>
-              How often you want to check in (default: 60 minutes)
+              {t('checkInSettings.intervalHint')}
             </Text>
           </View>
         </View>
@@ -129,9 +131,9 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
         <View style={styles.section}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Automatic Check-ins</Text>
+              <Text style={styles.settingTitle}>{t('checkInSettings.automaticCheckIns')}</Text>
               <Text style={styles.settingDescription}>
-                Automatically check in at scheduled intervals
+                {t('checkInSettings.automaticCheckInsDescription')}
               </Text>
             </View>
             <Switch
@@ -149,9 +151,9 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
         <View style={styles.section}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Auto Check-in During Travel</Text>
+              <Text style={styles.settingTitle}>{t('checkInSettings.autoCheckInDuringTravel')}</Text>
               <Text style={styles.settingDescription}>
-                Automatically check in when traveling
+                {t('checkInSettings.autoCheckInDuringTravelDescription')}
               </Text>
             </View>
             <Switch
@@ -168,9 +170,9 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
         {/* Travel Speed Threshold */}
         {localSettings.autoCheckInDuringTravel && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Travel Detection</Text>
+            <Text style={styles.sectionTitle}>{t('checkInSettings.travelDetection')}</Text>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Speed Threshold (km/h)</Text>
+              <Text style={styles.inputLabel}>{t('checkInSettings.speedThreshold')}</Text>
               <TextInput
                 style={styles.input}
                 value={localSettings.travelSpeedThresholdKmh?.toString() || '20'}
@@ -184,7 +186,7 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
                 placeholderTextColor="#9CA3AF"
               />
               <Text style={styles.inputHint}>
-                Consider traveling if speed exceeds this threshold (default: 20 km/h)
+                {t('checkInSettings.speedThresholdHint')}
               </Text>
             </View>
           </View>
@@ -192,9 +194,9 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
 
         {/* Missed Check-in Alert */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Missed Check-in Alerts</Text>
+          <Text style={styles.sectionTitle}>{t('checkInSettings.missedCheckInAlerts')}</Text>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Alert After (minutes)</Text>
+            <Text style={styles.inputLabel}>{t('checkInSettings.alertAfterMinutes')}</Text>
             <TextInput
               style={styles.input}
               value={localSettings.missedCheckInAlertMinutes?.toString() || '30'}
@@ -208,7 +210,7 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
               placeholderTextColor="#9CA3AF"
             />
             <Text style={styles.inputHint}>
-              Alert emergency contacts if check-in is missed by this duration (default: 30 minutes)
+              {t('checkInSettings.alertAfterHint')}
             </Text>
           </View>
         </View>
@@ -218,13 +220,12 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
           <View style={styles.infoCard}>
             <Ionicons name="information-circle" size={20} color="#007AFF" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>About Check-ins</Text>
+              <Text style={styles.infoTitle}>{t('checkInSettings.aboutCheckInsTitle')}</Text>
               <Text style={styles.infoText}>
-                Check-ins help your emergency contacts know you're safe. You can manually check in
-                anytime or set up automatic check-ins.
+                {t('checkInSettings.aboutCheckInsText1')}
               </Text>
               <Text style={styles.infoText}>
-                If you miss a scheduled check-in, your emergency contacts will be notified.
+                {t('checkInSettings.aboutCheckInsText2')}
               </Text>
             </View>
           </View>
@@ -244,7 +245,7 @@ export default function CheckInSettingsScreen({ navigation }: CheckInSettingsScr
           ) : (
             <>
               <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-              <Text style={styles.saveButtonText}>Save Settings</Text>
+              <Text style={styles.saveButtonText}>{t('checkInSettings.saveSettings')}</Text>
             </>
           )}
         </TouchableOpacity>

@@ -17,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import type { RootStackParamList } from '../types';
 
 const LOGIN_FAMILY_BG = require('../../assets/home/login-family-bg.png');
@@ -31,6 +33,7 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
+  const { t } = useTranslation();
   const [phone, setPhone] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -68,12 +71,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async (): Promise<void> => {
     if (!phone || !password) {
-      setError('Please fill in all fields');
+      setError(t('login.errorFillAllFields'));
       return;
     }
 
     if (phone.length !== 11) {
-      setError('Phone number must be exactly 11 digits');
+      setError(t('login.errorPhone11Digits'));
       return;
     }
 
@@ -83,7 +86,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await login(phone, password);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || t('login.errorLoginFailed'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +94,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleQuickLogin = async (): Promise<void> => {
     if (!lastLoggedInPhone || !password) {
-      setError('Please enter your password');
+      setError(t('login.errorEnterPassword'));
       return;
     }
 
@@ -101,7 +104,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await login(lastLoggedInPhone, password);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || t('login.errorLoginFailed'));
     } finally {
       setQuickLoginLoading(false);
     }
@@ -111,12 +114,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     const phoneToUse = showQuickLogin ? lastLoggedInPhone : forgotPasswordPhone.trim();
 
     if (!phoneToUse) {
-      setForgotPasswordError('Please enter your phone number');
+      setForgotPasswordError(t('login.errorEnterPhone'));
       return;
     }
 
     if (phoneToUse.length !== 11) {
-      setForgotPasswordError('Phone number must be exactly 11 digits');
+      setForgotPasswordError(t('login.errorPhone11Digits'));
       return;
     }
 
@@ -133,7 +136,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         setForgotPasswordSuccess(false);
       }, 3000);
     } catch (err: any) {
-      setForgotPasswordError(err.message || 'Failed to send password reset email. Please try again.');
+      setForgotPasswordError(err.message || t('login.errorResetFailed'));
     } finally {
       setForgotPasswordLoading(false);
     }
@@ -170,12 +173,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const renderPasswordField = (autoFocus = false) => (
     <View style={styles.inputWrapper}>
-      <Text style={styles.label}>Password</Text>
+      <Text style={styles.label}>{t('login.password')}</Text>
       <View style={styles.inputContainer}>
         <Ionicons name="lock-closed-outline" size={20} color="#0F172A" style={styles.inputIcon} />
         <TextInput
           style={styles.input}
-          placeholder="Enter your password"
+          placeholder={t('login.passwordPlaceholder')}
           placeholderTextColor="#94A3B8"
           value={password}
           onChangeText={setPassword}
@@ -227,7 +230,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             <View style={styles.primaryButtonIconLeft}>
               <Ionicons name="lock-closed" size={16} color="#FFFFFF" />
             </View>
-            <Text style={styles.primaryButtonText}>Sign In</Text>
+            <Text style={styles.primaryButtonText}>{t('login.signIn')}</Text>
             <View style={styles.primaryButtonIconRight}>
               <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
             </View>
@@ -248,6 +251,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <LanguageSwitcher compact />
           {/* Photo banner */}
           <View style={styles.banner}>
             <Image source={LOGIN_FAMILY_BG} style={styles.bannerImage} resizeMode="cover" />
@@ -278,8 +282,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
           {/* Brand */}
           <View style={styles.brandBlock}>
-            <Text style={styles.brandName}>FamGuard</Text>
-            <Text style={styles.tagline}>Stay Safe, Stay Connected</Text>
+            <Text style={styles.brandName}>{t('common.appName')}</Text>
+            <Text style={styles.tagline}>{t('login.tagline')}</Text>
             <View style={styles.taglineRow}>
               <View style={styles.taglineDivider} />
               <View style={styles.taglineDot} />
@@ -295,7 +299,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     <Text style={styles.avatarText}>{userInitial}</Text>
                   </View>
                   <View style={styles.quickLoginTextWrap}>
-                    <Text style={styles.cardTitle}>Welcome back</Text>
+                    <Text style={styles.cardTitle}>{t('login.welcomeBack')}</Text>
                     <Text style={styles.cardSubtitle}>{lastLoggedInName || lastLoggedInPhone}</Text>
                   </View>
                 </View>
@@ -311,10 +315,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                       {rememberMe ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
                     </View>
-                    <Text style={styles.rememberText}>Remember me</Text>
+                    <Text style={styles.rememberText}>{t('login.rememberMe')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={openForgotPassword} activeOpacity={0.7}>
-                    <Text style={styles.forgotText}>Forgot password?</Text>
+                    <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -323,25 +327,25 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
                 <TouchableOpacity style={styles.switchAccountButton} onPress={switchAccount} activeOpacity={0.7}>
                   <Ionicons name="swap-horizontal-outline" size={18} color="#0F172A" />
-                  <Text style={styles.switchAccountText}>Use a different account</Text>
+                  <Text style={styles.switchAccountText}>{t('login.useDifferentAccount')}</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <Text style={styles.cardTitle}>Welcome back</Text>
-                <Text style={styles.cardSubtitle}>Sign in to your account to continue</Text>
+                <Text style={styles.cardTitle}>{t('login.welcomeBack')}</Text>
+                <Text style={styles.cardSubtitle}>{t('login.signInSubtitle')}</Text>
 
                 <View style={styles.inputWrapper}>
-                  <Text style={styles.label}>Phone Number</Text>
+                  <Text style={styles.label}>{t('login.phoneNumber')}</Text>
                   <View style={styles.inputContainer}>
                     <Ionicons name="call-outline" size={20} color="#0F172A" style={styles.inputIcon} />
                     <View style={styles.countryPill}>
-                      <Text style={styles.countryCode}>+234</Text>
+                      <Text style={styles.countryCode}>{t('common.countryCode')}</Text>
                     </View>
                     <View style={styles.countryDivider} />
                     <TextInput
                       style={styles.input}
-                      placeholder="806 550 9821"
+                      placeholder={t('login.phonePlaceholder')}
                       placeholderTextColor="#94A3B8"
                       value={phone}
                       onChangeText={handlePhoneChange}
@@ -358,7 +362,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     ) : null}
                   </View>
                   {phone.length > 0 && !phoneValid ? (
-                    <Text style={styles.phoneHint}>{phone.length}/11 digits</Text>
+                    <Text style={styles.phoneHint}>{t('login.phoneDigitsHint', { count: phone.length })}</Text>
                   ) : null}
                 </View>
 
@@ -373,10 +377,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                       {rememberMe ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
                     </View>
-                    <Text style={styles.rememberText}>Remember me</Text>
+                    <Text style={styles.rememberText}>{t('login.rememberMe')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={openForgotPassword} activeOpacity={0.7}>
-                    <Text style={styles.forgotText}>Forgot password?</Text>
+                    <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -384,9 +388,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 {renderSignInButton(handleLogin, loading)}
 
                 <View style={styles.signupRow}>
-                  <Text style={styles.signupText}>Don&apos;t have an account? </Text>
+                  <Text style={styles.signupText}>{t('login.dontHaveAccount')}</Text>
                   <TouchableOpacity onPress={() => navigation.navigate('Signup')} activeOpacity={0.7}>
-                    <Text style={styles.signupLink}>Sign Up</Text>
+                    <Text style={styles.signupLink}>{t('login.signUp')}</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -396,7 +400,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           {/* Footer */}
           <View style={styles.footerRow}>
             <Ionicons name="shield-checkmark" size={16} color="#0F172A" />
-            <Text style={styles.footerText}>Your family&apos;s safety is our priority</Text>
+            <Text style={styles.footerText}>{t('login.footerText')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -424,19 +428,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 <Ionicons name="key-outline" size={28} color="#0F172A" />
               </View>
 
-              <Text style={styles.modalTitle}>Reset Password</Text>
-              <Text style={styles.modalSubtitle}>
-                Enter your phone number and we&apos;ll send a reset link to your account email.
-              </Text>
+              <Text style={styles.modalTitle}>{t('login.resetPassword')}</Text>
+              <Text style={styles.modalSubtitle}>{t('login.resetPasswordSubtitle')}</Text>
 
               {!showQuickLogin ? (
                 <View style={styles.inputWrapper}>
-                  <Text style={styles.label}>Phone Number</Text>
+                  <Text style={styles.label}>{t('login.phoneNumber')}</Text>
                   <View style={styles.inputContainer}>
                     <Ionicons name="call-outline" size={20} color="#0F172A" style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter 11-digit phone number"
+                      placeholder={t('login.phonePlaceholderForgot')}
                       placeholderTextColor="#94A3B8"
                       value={forgotPasswordPhone}
                       onChangeText={handleForgotPasswordPhoneChange}
@@ -451,7 +453,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 </View>
               ) : lastLoggedInPhone ? (
                 <View style={styles.inputWrapper}>
-                  <Text style={styles.label}>Phone Number</Text>
+                  <Text style={styles.label}>{t('login.phoneNumber')}</Text>
                   <View style={styles.readOnlyField}>
                     <Ionicons name="call-outline" size={20} color="#0F172A" style={styles.inputIcon} />
                     <Text style={styles.readOnlyText}>{lastLoggedInPhone}</Text>
@@ -469,9 +471,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               {forgotPasswordSuccess ? (
                 <View style={styles.successContainer}>
                   <Ionicons name="checkmark-circle" size={18} color="#0F172A" />
-                  <Text style={styles.successText}>
-                    Password reset email sent! Please check your inbox and follow the instructions.
-                  </Text>
+                  <Text style={styles.successText}>{t('login.resetSuccess')}</Text>
                 </View>
               ) : null}
 
@@ -491,7 +491,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {forgotPasswordSuccess ? 'Email Sent!' : 'Send Reset Link'}
+                      {forgotPasswordSuccess ? t('login.emailSent') : t('login.sendResetLink')}
                     </Text>
                   )}
                 </LinearGradient>

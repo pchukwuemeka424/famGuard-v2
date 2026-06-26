@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import type { RootStackParamList } from '../types';
 
 type EmergencyNotesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'EmergencyNotes'>;
@@ -21,6 +22,7 @@ interface EmergencyNotesScreenProps {
 }
 
 export default function EmergencyNotesScreen({ navigation }: EmergencyNotesScreenProps) {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const [notes, setNotes] = useState(user?.emergencyNotes || '');
   const [loading, setLoading] = useState(false);
@@ -31,12 +33,12 @@ export default function EmergencyNotesScreen({ navigation }: EmergencyNotesScree
       await updateUser({
         emergencyNotes: notes.trim() || null,
       });
-      Alert.alert('Success', 'Emergency notes updated successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() },
+      Alert.alert(t('common.success'), t('emergencyNotes.alertSuccess'), [
+        { text: t('common.ok'), onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       console.error('Error updating emergency notes:', error);
-      Alert.alert('Error', 'Failed to update emergency notes. Please try again.');
+      Alert.alert(t('common.error'), t('emergencyNotes.alertFailed'));
     } finally {
       setLoading(false);
     }
@@ -48,22 +50,19 @@ export default function EmergencyNotesScreen({ navigation }: EmergencyNotesScree
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Emergency Notes</Text>
+        <Text style={styles.headerTitle}>{t('emergencyNotes.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.description}>
-          Add important medical information, allergies, medications, or emergency contacts that
-          should be visible to your connections in case of an emergency.
-        </Text>
+        <Text style={styles.description}>{t('emergencyNotes.description')}</Text>
 
         <View style={styles.section}>
           <TextInput
             style={styles.textArea}
             value={notes}
             onChangeText={setNotes}
-            placeholder="Enter emergency notes..."
+            placeholder={t('emergencyNotes.placeholder')}
             placeholderTextColor="#8E8E93"
             multiline
             numberOfLines={10}
@@ -79,7 +78,7 @@ export default function EmergencyNotesScreen({ navigation }: EmergencyNotesScree
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Notes</Text>
+            <Text style={styles.saveButtonText}>{t('emergencyNotes.saveNotes')}</Text>
           )}
         </TouchableOpacity>
       </View>

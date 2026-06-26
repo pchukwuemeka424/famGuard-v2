@@ -15,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import type { RootStackParamList } from '../types';
 
 const WELCOME_HERO = require('../../assets/home/welcome-home.png');
@@ -38,6 +40,7 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -82,8 +85,9 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
           bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.appName}>FamGuard</Text>
-          <Text style={styles.tagline}>Your Family&apos;s Safety Network</Text>
+          <LanguageSwitcher compact />
+          <Text style={styles.appName}>{t('common.appName')}</Text>
+          <Text style={styles.tagline}>{t('welcome.tagline')}</Text>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -91,10 +95,7 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
             <View style={styles.dividerLine} />
           </View>
 
-          <Text style={styles.description}>
-            Stay connected with your loved ones and keep them safe with real-time location sharing
-            and community safety alerts.
-          </Text>
+          <Text style={styles.description}>{t('welcome.description')}</Text>
 
           <TouchableOpacity
             style={styles.primaryButton}
@@ -108,7 +109,7 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
               style={styles.primaryButtonGradient}
             >
               <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>Get Started</Text>
+              <Text style={styles.primaryButtonText}>{t('welcome.getStarted')}</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
@@ -120,7 +121,8 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
           >
             <Ionicons name="people-outline" size={18} color={TEXT_DARK} />
             <Text style={styles.loginText}>
-              Already have an account? <Text style={styles.loginLink}>Login</Text>
+              {t('welcome.alreadyHaveAccount')}{' '}
+              <Text style={styles.loginLink}>{t('welcome.login')}</Text>
             </Text>
           </TouchableOpacity>
 
@@ -130,32 +132,32 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
             activeOpacity={0.8}
           >
             <Ionicons name="book-outline" size={18} color={TEXT_DARK} />
-            <Text style={styles.manualButtonText}>User Manual</Text>
+            <Text style={styles.manualButtonText}>{t('welcome.userManual')}</Text>
           </TouchableOpacity>
 
           <View style={styles.legalRow}>
             <Ionicons name="lock-closed-outline" size={14} color={TEXT_DARK} style={styles.legalIcon} />
             <Text style={styles.legalText}>
-              By continuing, you agree to our{' '}
+              {t('welcome.legalPrefix')}{' '}
               <Text
                 style={styles.legalLink}
                 onPress={() => navigation.navigate('TermsOfService')}
               >
-                Terms of Service
+                {t('welcome.termsOfService')}
               </Text>
-              {' and '}
+              {t('welcome.legalAnd')}
               <Text
                 style={styles.legalLink}
                 onPress={() => navigation.navigate('PrivacyPolicy')}
               >
-                Privacy Policy
+                {t('welcome.privacyPolicy')}
               </Text>
             </Text>
           </View>
 
           <View style={styles.footer}>
             <Ionicons name="shield-outline" size={16} color={TEXT_DARK} />
-            <Text style={styles.footerText}>Acehub Technologies Ltd</Text>
+            <Text style={styles.footerText}>{t('common.companyName')}</Text>
           </View>
         </ScrollView>
       </Animated.View>

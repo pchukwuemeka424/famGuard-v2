@@ -7,6 +7,9 @@ import { supabase } from '../lib/supabase';
 import type { Location as LocationType } from '../types';
 
 const LOCATION_TASK_NAME = 'background-location-task';
+export const EMERGENCY_TRACKING_ACTIVE_KEY = 'emergency_tracking_active';
+const EMERGENCY_LOCATION_UPDATE_INTERVAL_MINUTES = 15;
+const NORMAL_LOCATION_UPDATE_INTERVAL_MINUTES = 30;
 
 // Define the background task
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
@@ -72,9 +75,16 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         const familyGroupId = await AsyncStorage.getItem('location_tracking_familyGroupId');
         const shareLocationStr = await AsyncStorage.getItem('location_tracking_shareLocation');
         const shareLocation = shareLocationStr === 'true';
+        const isEmergencyTracking =
+          (await AsyncStorage.getItem(EMERGENCY_TRACKING_ACTIVE_KEY)) === 'true';
 
-        if (!userId || !familyGroupId) {
-          console.warn('Background location update: userId or familyGroupId not found in storage');
+        if (!userId) {
+          console.warn('Background location update: userId not found in storage');
+          return;
+        }
+
+        if (!isEmergencyTracking && !familyGroupId) {
+          console.warn('Background location update: familyGroupId not found in storage');
           return;
         }
 
@@ -87,23 +97,26 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
           // Use default value if battery level cannot be retrieved
         }
 
-        // Find the family member record for this user
-        const { data: members, error: memberError } = await supabase
-          .from('family_members')
-          .select('id')
-          .eq('family_group_id', familyGroupId)
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        // Find the family member record for this user (optional during emergency tracking)
+        let member: { id: string } | null = null;
+        if (familyGroupId) {
+          const { data: members } = await supabase
+            .from('family_members')
+            .select('id')
+            .eq('family_group_id', familyGroupId)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1);
 
-        const member = members && members.length > 0 ? members[0] : null;
+          member = members && members.length > 0 ? members[0] : null;
+        }
 
-        // Save to location_history every 30 minutes (fixed interval for background/closed app)
-        // This ensures consistent location tracking when app is closed or in background
+        // Save to location_history on a fixed interval (shorter during emergency)
         try {
-          // Fixed 30-minute interval for background/closed app location tracking
-          const LOCATION_UPDATE_INTERVAL_MINUTES = 30;
-          const frequencyMs = LOCATION_UPDATE_INTERVAL_MINUTES * 60 * 1000; // 30 minutes in milliseconds
+          const LOCATION_UPDATE_INTERVAL_MINUTES = isEmergencyTracking
+            ? EMERGENCY_LOCATION_UPDATE_INTERVAL_MINUTES
+            : NORMAL_LOCATION_UPDATE_INTERVAL_MINUTES;
+          const frequencyMs = LOCATION_UPDATE_INTERVAL_MINUTES * 60 * 1000;
 
           // Check if enough time has passed since last insert
           const lastInsertKey = `location_history_last_insert_${userId}`;
@@ -116,7 +129,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
             // Not enough time has passed, skip insert
             const minutesRemaining = Math.ceil((frequencyMs - timeSinceLastInsert) / (60 * 1000));
             if (__DEV__) {
-              console.log(`Skipping background location history insert - ${minutesRemaining} minutes remaining (30-minute interval)`);
+              console.log(
+                `Skipping background location history insert - ${minutesRemaining} minutes remaining (${LOCATION_UPDATE_INTERVAL_MINUTES}-minute interval)`
+              );
             }
           } else {
             // ALWAYS insert new row into location_history - NEVER update existing rows
@@ -144,7 +159,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               // Update last insert timestamp in AsyncStorage (this is just for tracking, not database update)
               await AsyncStorage.setItem(lastInsertKey, now.toString());
               if (__DEV__) {
-                console.log(`Background location inserted into history (new row created, 30-minute interval)`);
+                console.log(
+                  `Background location inserted into history (new row created, ${LOCATION_UPDATE_INTERVAL_MINUTES}-minute interval${isEmergencyTracking ? ', emergency' : ''})`
+                );
               }
             }
           }
@@ -152,8 +169,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
           console.warn('Error in saveLocationHistory (background):', historyErr);
         }
 
-        // Update connections table for real-time location sharing (if location sharing is enabled)
-        if (shareLocation) {
+        // Update connections table for real-time location sharing (always during emergency)
+        if (shareLocation || isEmergencyTracking) {
           try {
             const { error: connectionsError } = await supabase
               .from('connections')
@@ -191,8 +208,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               location_longitude: locationData.longitude,
               location_address: locationData.address || null,
               last_seen: new Date().toISOString(),
-              is_online: shareLocation,
-              share_location: shareLocation,
+              is_online: shareLocation || isEmergencyTracking,
+              share_location: shareLocation || isEmergencyTracking,
               battery_level: batteryLevel,
             })
             .eq('id', member.id);
@@ -207,7 +224,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               });
             }
           }
-        } else {
+        } else if (!isEmergencyTracking) {
           console.warn('Background location update: Family member not found (but history was saved)');
         }
       } catch (dbError) {

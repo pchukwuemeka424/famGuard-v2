@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 type LocationUpdateFrequencyScreenNavigationProp = StackNavigationProp<RootStackParamList, 'LocationUpdateFrequency'>;
@@ -22,20 +23,21 @@ interface LocationUpdateFrequencyScreenProps {
 }
 
 interface FrequencyOption {
-  label: string;
+  labelKey: string;
   minutes: number;
-  description: string;
+  descriptionKey: string;
 }
 
-const FREQUENCY_OPTIONS: FrequencyOption[] = [
-  { label: '15 minutes', minutes: 15, description: 'Update location every 15 minutes' },
-  { label: '30 minutes', minutes: 30, description: 'Update location every 30 minutes' },
-  { label: '1 hour', minutes: 60, description: 'Update location every hour (recommended)' },
-  { label: '2 hours', minutes: 120, description: 'Update location every 2 hours' },
-  { label: '3 hours', minutes: 180, description: 'Update location every 3 hours' },
+const FREQUENCY_OPTION_KEYS: FrequencyOption[] = [
+  { labelKey: 'locationFrequency.option15Min', minutes: 15, descriptionKey: 'locationFrequency.option15MinDesc' },
+  { labelKey: 'locationFrequency.option30Min', minutes: 30, descriptionKey: 'locationFrequency.option30MinDesc' },
+  { labelKey: 'locationFrequency.option1Hour', minutes: 60, descriptionKey: 'locationFrequency.option1HourDesc' },
+  { labelKey: 'locationFrequency.option2Hours', minutes: 120, descriptionKey: 'locationFrequency.option2HoursDesc' },
+  { labelKey: 'locationFrequency.option3Hours', minutes: 180, descriptionKey: 'locationFrequency.option3HoursDesc' },
 ];
 
 export default function LocationUpdateFrequencyScreen({ navigation }: LocationUpdateFrequencyScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [selectedMinutes, setSelectedMinutes] = useState<number>(60); // Default 1 hour
   const [loading, setLoading] = useState<boolean>(true);
@@ -122,7 +124,7 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
           setSelectedMinutes(60); // Default 1 hour
         } else {
           console.error('Error loading settings:', error);
-          Alert.alert('Error', 'Failed to load settings. Using default values.');
+          Alert.alert(t('common.error'), t('locationFrequency.alertLoadFailed'));
           setSelectedMinutes(60);
         }
       } else if (data) {
@@ -182,7 +184,7 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
 
       if (error) {
         console.error('Error saving location update frequency:', error);
-        Alert.alert('Error', 'Failed to save location update frequency. Please try again.');
+        Alert.alert(t('common.error'), t('locationFrequency.alertSaveFailed'));
         // Revert on error
         await loadSettings();
       } else {
@@ -190,7 +192,7 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
       }
     } catch (error) {
       console.error('Error saving location update frequency:', error);
-      Alert.alert('Error', 'Failed to save location update frequency. Please try again.');
+      Alert.alert(t('common.error'), t('locationFrequency.alertSaveFailed'));
       // Revert on error
       await loadSettings();
     } finally {
@@ -216,12 +218,12 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#000000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Location Update Frequency</Text>
+          <Text style={styles.headerTitle}>{t('locationFrequency.title')}</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading settings...</Text>
+          <Text style={styles.loadingText}>{t('common.loadingSettings')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -233,17 +235,14 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Location Update Frequency</Text>
+        <Text style={styles.headerTitle}>{t('locationFrequency.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.description}>
-          Choose how often your location is updated and shared with your connections.
-          More frequent updates provide better accuracy but use more battery.
-        </Text>
+        <Text style={styles.description}>{t('locationFrequency.description')}</Text>
 
-        {FREQUENCY_OPTIONS.map((option) => {
+        {FREQUENCY_OPTION_KEYS.map((option) => {
           const isSelected = selectedMinutes === option.minutes;
           const isSaving = saving && selectedMinutes === option.minutes;
 
@@ -267,14 +266,14 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
                 )}
                 <View style={styles.optionText}>
                   <View style={styles.optionHeader}>
-                    <Text style={styles.optionTitle}>{option.label}</Text>
+                    <Text style={styles.optionTitle}>{t(option.labelKey)}</Text>
                     {isSelected && (
                       <View style={styles.selectedBadge}>
-                        <Text style={styles.selectedBadgeText}>Current</Text>
+                        <Text style={styles.selectedBadgeText}>{t('common.current')}</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.optionSubtitle}>{option.description}</Text>
+                  <Text style={styles.optionSubtitle}>{t(option.descriptionKey)}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -283,10 +282,7 @@ export default function LocationUpdateFrequencyScreen({ navigation }: LocationUp
 
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
-          <Text style={styles.infoText}>
-            Your location will be updated automatically at the selected interval when location sharing is enabled.
-            You can change this setting at any time.
-          </Text>
+          <Text style={styles.infoText}>{t('locationFrequency.infoText')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

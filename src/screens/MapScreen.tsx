@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as ExpoLocation from 'expo-location';
 import { useIncidents } from '../context/IncidentContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { locationService } from '../services/locationService';
 import { offlineMapsService } from '../services/offlineMapsService';
 import { supabase } from '../lib/supabase';
@@ -40,19 +41,21 @@ const BOTTOM_SHEET_HEIGHT = SCREEN_HEIGHT * 0.42;
 type MapLayerType = 'hybrid' | 'standard' | 'satellite';
 
 const MAP_LAYER_CYCLE: MapLayerType[] = ['hybrid', 'standard', 'satellite'];
-const MAP_LAYER_LABELS: Record<MapLayerType, string> = {
-  hybrid: 'Hybrid',
-  standard: 'Standard',
-  satellite: 'Satellite',
-};
 
 export default function MapScreen({ route, navigation }: MapScreenProps) {
+  const { t } = useTranslation();
   const { location, title, showUserLocation = true, userId } = route.params;
   const { userLocation: incidentUserLocation } = useIncidents();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const [mapLayer, setMapLayer] = useState<MapLayerType>('hybrid');
+
+  const mapLayerLabels: Record<MapLayerType, string> = {
+    hybrid: t('map.mapLayerHybrid'),
+    standard: t('map.mapLayerStandard'),
+    satellite: t('map.mapLayerSatellite'),
+  };
   
   // targetUserId is the user whose location we're viewing
   // If userId is provided (viewing someone else), use that
@@ -1312,17 +1315,17 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
           </TouchableOpacity>
           <View style={styles.headerCopy}>
             <Text style={styles.headerTitle} numberOfLines={1}>
-              {title || 'Location Map'}
+              {title || t('map.locationMap')}
             </Text>
-            <Text style={styles.headerSubtitle}>Loading location data...</Text>
+            <Text style={styles.headerSubtitle}>{t('map.loadingLocationData')}</Text>
           </View>
           <View style={styles.headerIconButtonPlaceholder} />
         </View>
         <View style={styles.loadingContainer}>
           <View style={styles.loadingCard}>
             <ActivityIndicator size="large" color="#6366F1" />
-            <Text style={styles.loadingTitle}>Preparing map</Text>
-            <Text style={styles.loadingSubtitle}>Fetching live location and history</Text>
+            <Text style={styles.loadingTitle}>{t('map.preparingMap')}</Text>
+            <Text style={styles.loadingSubtitle}>{t('map.fetchingLocationHistory')}</Text>
           </View>
         </View>
       </View>
@@ -1455,14 +1458,14 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
 
         <View style={styles.headerCopy}>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {title || 'Location Map'}
+            {title || t('map.locationMap')}
           </Text>
           <Text style={styles.headerSubtitle} numberOfLines={1}>
             {timelineStats.lastUpdated
-              ? `Updated ${formatTime(timelineStats.lastUpdated)}`
+              ? t('map.updatedAt', { time: formatTime(timelineStats.lastUpdated) })
               : hasValidDestination
-                ? 'Live location tracking'
-                : 'Location timeline'}
+                ? t('map.liveLocationTracking')
+                : t('map.locationTimeline')}
           </Text>
         </View>
 
@@ -1497,7 +1500,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
           </View>
           <View style={styles.locationInfoCopy}>
             <Text style={styles.locationInfoTitle} numberOfLines={1}>
-              {destinationLocation.address?.split(',')[0] || 'Current location'}
+              {destinationLocation.address?.split(',')[0] || t('map.currentLocation')}
             </Text>
             <Text style={styles.locationInfoMeta} numberOfLines={1}>
               {destinationLocation.address ||
@@ -1522,7 +1525,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
       >
         <TouchableOpacity style={styles.controlButton} onPress={cycleMapLayer} activeOpacity={0.85}>
           <Ionicons name="layers-outline" size={20} color="#334155" />
-          <Text style={styles.controlButtonLabel}>{MAP_LAYER_LABELS[mapLayer]}</Text>
+          <Text style={styles.controlButtonLabel}>{mapLayerLabels[mapLayer]}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1542,7 +1545,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
       {hasOfflineMap && (
         <View style={[styles.offlineBadge, { top: insets.top + 72 }]}>
           <Ionicons name="cloud-offline-outline" size={14} color="#10B981" />
-          <Text style={styles.offlineBadgeText}>Offline map available</Text>
+          <Text style={styles.offlineBadgeText}>{t('map.offlineMapAvailable')}</Text>
         </View>
       )}
 
@@ -1551,7 +1554,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
           <View style={styles.mapErrorIconWrap}>
             <Ionicons name="alert-circle" size={24} color="#EF4444" />
           </View>
-          <Text style={styles.mapErrorText}>Map failed to load</Text>
+          <Text style={styles.mapErrorText}>{t('map.mapFailedToLoad')}</Text>
           <Text style={styles.mapErrorSubtext}>
             {Platform.OS === 'android'
               ? 'Check Google Play Services and your internet connection.'
@@ -1565,9 +1568,9 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
           <View style={[styles.mapErrorIconWrap, styles.mapErrorIconWrapMuted]}>
             <Ionicons name="location-off-outline" size={24} color="#64748B" />
           </View>
-          <Text style={styles.mapErrorText}>Location unavailable</Text>
+          <Text style={styles.mapErrorText}>{t('map.locationUnavailable')}</Text>
           <Text style={styles.mapErrorSubtext}>
-            {title || 'This user'} has not shared their location yet.
+            {t('map.locationNotShared', { name: title || t('map.thisUser') })}
           </Text>
         </View>
       )}
@@ -1578,14 +1581,14 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
 
           <View style={styles.sheetHeader}>
             <View>
-              <Text style={styles.sheetTitle}>Location Timeline</Text>
+              <Text style={styles.sheetTitle}>{t('map.locationTimelineTitle')}</Text>
               <Text style={styles.sheetSubtitle}>
-                {timelineStats.pointCount} point{timelineStats.pointCount === 1 ? '' : 's'} recorded
+                {t('map.pointsRecorded', { count: timelineStats.pointCount })}
               </Text>
             </View>
             <View style={styles.livePill}>
               <View style={styles.liveDot} />
-              <Text style={styles.livePillText}>Live</Text>
+              <Text style={styles.livePillText}>{t('common.live')}</Text>
             </View>
           </View>
 
@@ -1625,16 +1628,16 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
             {historyLoading ? (
               <View style={styles.timelineLoading}>
                 <ActivityIndicator size="large" color="#6366F1" />
-                <Text style={styles.timelineLoadingText}>Loading timeline...</Text>
+                <Text style={styles.timelineLoadingText}>{t('common.loading')}</Text>
               </View>
             ) : locationHistory.length === 0 ? (
               <View style={styles.timelineEmpty}>
                 <View style={styles.emptyIconContainer}>
                   <Ionicons name="location-outline" size={40} color="#C7D2FE" />
                 </View>
-                <Text style={styles.timelineEmptyTitle}>No location history</Text>
+                <Text style={styles.timelineEmptyTitle}>{t('map.noLocationHistory')}</Text>
                 <Text style={styles.timelineEmptyText}>
-                  No location data for {formatDateDisplay(selectedDate).toLowerCase()}.
+                  {t('map.noLocationDataForDate', { date: formatDateDisplay(selectedDate).toLowerCase() })}
                 </Text>
               </View>
             ) : (
@@ -1694,7 +1697,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
                               <View style={styles.timelineHeader}>
                                 <View style={styles.activityBadge}>
                                   <Ionicons name="walk" size={13} color="#10B981" />
-                                  <Text style={styles.activityBadgeText}>Movement</Text>
+                                  <Text style={styles.activityBadgeText}>{t('map.movement')}</Text>
                                 </View>
                                 <Text style={styles.timelineTime}>
                                   {formatTimeRange(prevItem.timestamp, item.timestamp)}
@@ -1715,7 +1718,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
                             <>
                               <View style={styles.timelineHeader}>
                                 <Text style={styles.timelineTitle} numberOfLines={1}>
-                                  {item.address ? item.address.split(',')[0] : 'Location point'}
+                                  {item.address ? item.address.split(',')[0] : t('map.locationPoint')}
                                 </Text>
                                 <Text style={styles.timelineTime}>
                                   {new Date(item.timestamp).toLocaleTimeString([], {
@@ -1732,7 +1735,7 @@ export default function MapScreen({ route, navigation }: MapScreenProps) {
                               ) : null}
                               <View style={styles.timelineFooter}>
                                 <Text style={styles.timelineStatus}>
-                                  {isFirst ? 'Latest position' : 'Previous stop'}
+                                  {isFirst ? t('map.latestPosition') : t('map.previousStop')}
                                 </Text>
                                 <Text style={styles.timelineDate}>{formatTime(item.timestamp)}</Text>
                               </View>

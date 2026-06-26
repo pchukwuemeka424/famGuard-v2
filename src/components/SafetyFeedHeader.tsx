@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 
 const HEADER_BG = require('../../assets/home/safety-feed-header-bg.png');
 
@@ -19,10 +20,12 @@ export default function SafetyFeedHeader({
   onReportPress,
   hideReport = false,
 }: SafetyFeedHeaderProps) {
+  const { t } = useTranslation();
+
   const subtitle =
     incidentCount === 0
-      ? 'No active reports nearby'
-      : `${incidentCount} report${incidentCount === 1 ? '' : 's'} within ${radiusKm} km`;
+      ? t('incidents.noActiveReports')
+      : t('incidents.reportsWithinRadius', { count: incidentCount, km: radiusKm });
 
   return (
     <View style={styles.container}>
@@ -37,7 +40,7 @@ export default function SafetyFeedHeader({
               onPress={onReportPress}
               style={styles.reportButton}
               activeOpacity={0.75}
-              accessibilityLabel="Report incident"
+              accessibilityLabel={t('reportIncident.title')}
             >
               <Ionicons name="add" size={22} color="#2563EB" />
             </TouchableOpacity>
@@ -47,7 +50,7 @@ export default function SafetyFeedHeader({
         </View>
 
         <View style={styles.textBlock}>
-          <Text style={styles.title}>Safety Feed</Text>
+          <Text style={styles.title}>{t('incidents.title')}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
       </View>

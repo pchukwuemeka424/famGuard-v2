@@ -1079,9 +1079,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Stop all location services if active
       const { locationService } = await import('../services/locationService');
       await locationService.stopLocationSharing();
-      locationService.stopEmergencyLocationTracking();
-      locationService.stopEmergencyHighAccuracyTracking();
-      locationService.stopSOSLocationTracking();
+      await locationService.stopAllEmergencyTracking();
       
       // Disable location sharing in database and clear location data
       if (currentUserId) {
@@ -1212,8 +1210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const { locationService } = await import('../services/locationService');
         await locationService.stopLocationSharing();
-        locationService.stopEmergencyLocationTracking();
-        locationService.stopSOSLocationTracking();
+        await locationService.stopAllEmergencyTracking();
       } catch (error) {
         console.warn('Error stopping location services:', error);
       }

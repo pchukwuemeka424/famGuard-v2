@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '../context/LanguageContext';
 import type { Advert } from '../types';
 
 interface AdvertScreenProps {
@@ -17,6 +18,7 @@ interface AdvertScreenProps {
 }
 
 export default function AdvertScreen({ advert, onFinish }: AdvertScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -89,9 +91,9 @@ export default function AdvertScreen({ advert, onFinish }: AdvertScreenProps) {
             style={styles.skipButton}
             onPress={finish}
             accessibilityRole="button"
-            accessibilityLabel="Skip advert"
+            accessibilityLabel={t('advert.skip')}
           >
-            <Text style={styles.skipText}>Skip</Text>
+            <Text style={styles.skipText}>{t('advert.skip')}</Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>

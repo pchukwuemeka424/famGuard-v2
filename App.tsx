@@ -55,6 +55,7 @@ import UpdateScreen from './src/screens/UpdateScreen';
 
 // Context
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { LanguageProvider, useTranslation } from './src/context/LanguageContext';
 import { ConnectionProvider } from './src/context/ConnectionContext';
 import { IncidentProvider } from './src/context/IncidentContext';
 import { AppSettingProvider, useAppSetting } from './src/context/AppSettingContext';
@@ -69,6 +70,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
   const { hideIncident } = useAppSetting();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -77,11 +79,13 @@ function MainTabs() {
         headerShown: false,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="CheckIn" component={CheckInScreen} options={{ tabBarLabel: 'Check In' }} />
-      {!hideIncident && <Tab.Screen name="Incidents" component={IncidentFeedScreen} />}
-      <Tab.Screen name="Connections" component={ConnectionScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('tabs.home') }} />
+      <Tab.Screen name="CheckIn" component={CheckInScreen} options={{ tabBarLabel: t('tabs.checkIn') }} />
+      {!hideIncident && (
+        <Tab.Screen name="Incidents" component={IncidentFeedScreen} options={{ tabBarLabel: t('tabs.incidents') }} />
+      )}
+      <Tab.Screen name="Connections" component={ConnectionScreen} options={{ tabBarLabel: t('tabs.connections') }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: t('tabs.profile') }} />
     </Tab.Navigator>
   );
 }
@@ -234,22 +238,24 @@ export default function App() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <AuthProvider>
-          <AppSettingProvider>
-            <ConnectionProvider>
-              <IncidentProvider>
-                <TravelAdvisoryProvider>
-                  <CheckInProvider>
+          <LanguageProvider>
+            <AppSettingProvider>
+              <ConnectionProvider>
+                <IncidentProvider>
+                  <TravelAdvisoryProvider>
+                    <CheckInProvider>
                     <StatusBar style="auto" />
                     {showSplash ? (
                       <SplashScreen onFinish={handleSplashFinish} />
                     ) : (
                       <PostSplashContent onReady={handleAppReady} />
                     )}
-                  </CheckInProvider>
-                </TravelAdvisoryProvider>
-              </IncidentProvider>
-            </ConnectionProvider>
-          </AppSettingProvider>
+                    </CheckInProvider>
+                  </TravelAdvisoryProvider>
+                </IncidentProvider>
+              </ConnectionProvider>
+            </AppSettingProvider>
+          </LanguageProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
@@ -306,6 +312,7 @@ function PostSplashContent({ onReady }: { onReady: () => void }) {
 
 function AppContent({ onReady }: { onReady: () => void }) {
   const { loading } = useAuth();
+  const { t } = useTranslation();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
@@ -350,7 +357,7 @@ function AppContent({ onReady }: { onReady: () => void }) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 12, fontSize: 16, color: '#8E8E93' }}>Loading...</Text>
+        <Text style={{ marginTop: 12, fontSize: 16, color: '#8E8E93' }}>{t('common.loading')}</Text>
       </View>
     );
   }

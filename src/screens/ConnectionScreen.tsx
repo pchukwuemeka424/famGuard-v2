@@ -28,6 +28,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { useConnection } from '../context/ConnectionContext';
 import { supabase } from '../lib/supabase';
 import { locationService } from '../services/locationService';
@@ -43,6 +44,7 @@ interface ConnectionScreenProps {
 }
 
 export default function ConnectionScreen({ navigation }: ConnectionScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { locationSharingEnabled } = useConnection();
   const insets = useSafeAreaInsets();
@@ -242,12 +244,12 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
           // On Android, show alert if permission is permanently denied
           if (Platform.OS === 'android' && permissionResult.message && !permissionResult.canAskAgain) {
             Alert.alert(
-              'Location Permission Required',
-              permissionResult.message || 'Location permission is required to share your location with connections.',
+              t('common.permissionRequired'),
+              permissionResult.message || t('home.alertPermissionLocation'),
               [
-                { text: 'Cancel', style: 'cancel' },
-                { 
-                  text: 'Open Settings', 
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                  text: t('common.openSettings'),
                   onPress: () => {
                     Linking.openSettings().catch((error) => {
                       console.error('Error opening settings:', error);
@@ -836,7 +838,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
   const sendInvitationByPhone = async (): Promise<void> => {
     if (!user?.id || !phoneInput.trim()) {
-      Alert.alert('Invalid Input', 'Please enter a phone number.');
+      Alert.alert(t('common.error'), t('connections.alertInvalidInput'));
       return;
     }
 
@@ -844,13 +846,13 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
     const normalizedPhone = phoneInput.replace(/\D/g, '');
 
     if (normalizedPhone.length !== 11) {
-      Alert.alert('Invalid Phone', 'Please enter an 11-digit phone number.');
+      Alert.alert(t('common.error'), t('connections.alertInvalidPhone'));
       return;
     }
 
     // Check if trying to invite self
     if (user.phone && normalizedPhone === user.phone.replace(/[\s\-\(\)]/g, '')) {
-      Alert.alert('Invalid Phone', 'You cannot invite yourself.');
+      Alert.alert(t('common.error'), t('connections.alertCannotInviteSelf'));
       setPhoneInput('');
       return;
     }
@@ -899,16 +901,16 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
       if (userError) {
         console.error('Error checking user:', userError);
-        Alert.alert('Error', 'Failed to check phone number. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertCheckPhoneFailed'));
         return;
       }
 
       if (!existingUser) {
         // Phone number doesn't exist - show error message
         Alert.alert(
-          'User Not Found',
-          'This phone number is not registered on the app. Please ask them to download the app first to accept your invitation.',
-          [{ text: 'OK' }]
+          t('connections.alertUserNotFoundTitle'),
+          t('connections.alertUserNotFound'),
+          [{ text: t('common.ok') }]
         );
         setPhoneInput('');
         return;
@@ -923,7 +925,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         .single();
 
       if (existingConnection) {
-        Alert.alert('Already Connected', 'You are already connected to this user.');
+        Alert.alert(t('connections.connected'), t('connections.alertAlreadyConnected'));
         setPhoneInput('');
         setShowInviteByPhoneModal(false);
         return;
@@ -940,7 +942,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         .single();
 
       if (existingInvitation) {
-        Alert.alert('Invitation Sent', 'You have already sent an invitation to this phone number.');
+        Alert.alert(t('connections.inviteByPhoneModalTitle'), t('connections.alertInvitationAlreadySent'));
         setPhoneInput('');
         setShowInviteByPhoneModal(false);
         return;
@@ -965,7 +967,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
       if (inviteError) {
         console.error('Error sending invitation:', inviteError);
-        Alert.alert('Error', 'Failed to send invitation. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertSendInvitationFailed'));
         return;
       }
 
@@ -1041,14 +1043,14 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         }
       }
 
-      Alert.alert('Invitation Sent', `Invitation sent to ${normalizedPhone}. They will receive a notification.`);
+      Alert.alert(t('connections.inviteByPhoneModalTitle'), t('connections.alertInvitationSent', { phone: normalizedPhone }));
       setPhoneInput('');
       setShowInviteByPhoneModal(false);
       // Real-time subscription will automatically update invitations for the recipient
       // No need to manually reload
     } catch (error) {
       console.error('Error in sendInvitationByPhone:', error);
-      Alert.alert('Error', 'Failed to send invitation. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertSendInvitationFailed'));
     } finally {
       setSendingInvitation(false);
     }
@@ -1068,7 +1070,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
       if (error) {
         console.error('Error accepting invitation:', error);
-        Alert.alert('Error', 'Failed to accept invitation. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertAcceptFailed'));
         return;
       }
 
@@ -1111,7 +1113,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             console.error('Exception sending connection accepted push notification:', notifError);
           }
 
-          Alert.alert('Connected!', 'You are now connected.');
+          Alert.alert(t('connections.connected'), t('connections.alertConnected'));
           // Automatically update location when connection is accepted
           // This ensures the connection shows as online with location immediately
           if (locationSharingEnabled) {
@@ -1123,12 +1125,12 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
           // Real-time subscriptions will automatically update connections and invitations
           // No need to manually reload - real-time will handle it
         } else {
-          Alert.alert('Error', result.message || 'Failed to accept invitation.');
+          Alert.alert(t('common.error'), result.message || t('connections.alertAcceptFailed'));
         }
       }
     } catch (error) {
       console.error('Error in acceptInvitation:', error);
-      Alert.alert('Error', 'Failed to accept invitation. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertAcceptFailed'));
     }
   };
 
@@ -1143,7 +1145,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
       if (error) {
         console.error('Error rejecting invitation:', error);
-        Alert.alert('Error', 'Failed to reject invitation. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertRejectFailed'));
         return;
       }
 
@@ -1151,7 +1153,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
       // No need to manually reload
     } catch (error) {
       console.error('Error in rejectInvitation:', error);
-      Alert.alert('Error', 'Failed to reject invitation. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertRejectFailed'));
     }
   };
 
@@ -1190,7 +1192,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
       if (error) {
         console.error('Error generating connection code:', error);
-        Alert.alert('Error', 'Failed to generate connection code. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertGenerateCodeFailed'));
         return;
       }
 
@@ -1198,7 +1200,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
       setShowGenerateCodeModal(true);
     } catch (error) {
       console.error('Error in generateConnectionCode:', error);
-      Alert.alert('Error', 'Failed to generate connection code. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertGenerateCodeFailed'));
     } finally {
       setGeneratingCode(false);
     }
@@ -1206,14 +1208,14 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
   const connectByCode = async (): Promise<void> => {
     if (!user?.id || !codeInput.trim()) {
-      Alert.alert('Invalid Input', 'Please enter a connection code.');
+      Alert.alert(t('common.error'), t('connections.alertEnterConnectionCode'));
       return;
     }
 
     const normalizedCode = codeInput.trim().replace(/\s/g, '');
 
     if (normalizedCode.length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter a 6-digit connection code.');
+      Alert.alert(t('common.error'), t('connections.alertInvalidCode'));
       return;
     }
 
@@ -1230,7 +1232,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         .single();
 
       if (codeError || !codeData) {
-        Alert.alert('Invalid Code', 'This connection code is invalid or has expired.');
+        Alert.alert(t('common.error'), t('connections.alertCodeInvalidOrExpired'));
         setCodeInput('');
         return;
       }
@@ -1243,13 +1245,13 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         .single();
 
       if (ownerError || !codeOwner) {
-        Alert.alert('Error', 'Code owner not found.');
+        Alert.alert(t('common.error'), t('connections.alertCodeOwnerNotFound'));
         return;
       }
 
       // Check if trying to connect to self
       if (codeOwner.id === user.id) {
-        Alert.alert('Invalid Code', 'You cannot use your own connection code.');
+        Alert.alert(t('common.error'), t('connections.alertCannotUseOwnCode'));
         setCodeInput('');
         return;
       }
@@ -1263,7 +1265,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         .single();
 
       if (existingConnection) {
-        Alert.alert('Already Connected', 'You are already connected to this user.');
+        Alert.alert(t('connections.connected'), t('connections.alertAlreadyConnected'));
         setCodeInput('');
         setShowEnterCodeModal(false);
         return;
@@ -1293,7 +1295,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
       if (connectionError) {
         console.error('Error creating connection:', connectionError);
-        Alert.alert('Error', 'Failed to create connection. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertCreateConnectionFailed'));
         return;
       }
 
@@ -1341,7 +1343,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         console.error('Error creating in-app notification:', notifError);
       }
 
-      Alert.alert('Connected!', `You are now connected to ${codeOwner.name}.`);
+      Alert.alert(t('connections.connected'), t('connections.alertConnectedTo', { name: codeOwner.name }));
       setCodeInput('');
       setShowEnterCodeModal(false);
 
@@ -1360,7 +1362,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
       }, 500);
     } catch (error) {
       console.error('Error in connectByCode:', error);
-      Alert.alert('Error', 'Failed to connect. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertConnectFailed'));
     } finally {
       setConnectingByCode(false);
     }
@@ -1408,7 +1410,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             id: conn.id,
             userId: conn.user_id,
             connectedUserId: conn.connected_user_id,
-            connectedUserName: conn.connected_user_name || 'Unknown User',
+            connectedUserName: conn.connected_user_name || t('common.unknownUser'),
             connectedUserEmail: conn.connected_user_email,
             connectedUserPhone: conn.connected_user_phone,
             connectedUserPhoto: conn.connected_user_photo,
@@ -1467,7 +1469,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             conn.connectedUserId === connectedUserId ? { ...conn, isLocked: true } : conn
           )
         );
-        Alert.alert('Error', 'Failed to unlock user. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertUnlockFailed'));
         return false;
       }
 
@@ -1475,7 +1477,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         loadConnections();
       }, 500);
 
-      Alert.alert('Success', `${connectedUserName} has been unlocked and can now access the app.`);
+      Alert.alert(t('common.success'), t('connections.alertUnlockSuccess', { name: connectedUserName }));
       return true;
     } catch (error) {
       console.error('Error in performUnlockUser:', error);
@@ -1484,7 +1486,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
           conn.connectedUserId === connectedUserId ? { ...conn, isLocked: true } : conn
         )
       );
-      Alert.alert('Error', 'Failed to unlock user. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertUnlockFailed'));
       return false;
     }
   };
@@ -1509,7 +1511,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             conn.connectedUserId === connectedUserId ? { ...conn, isLocked: false } : conn
           )
         );
-        Alert.alert('Error', 'Failed to lock account. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertLockFailed'));
         return false;
       }
 
@@ -1517,7 +1519,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         loadConnections();
       }, 500);
 
-      Alert.alert('Account Locked', `${connectedUserName}'s account has been locked.`);
+      Alert.alert(t('connections.lockAccount'), t('connections.alertAccountLocked', { name: connectedUserName }));
       return true;
     } catch (error) {
       console.error('Error in performLockUser:', error);
@@ -1526,7 +1528,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
           conn.connectedUserId === connectedUserId ? { ...conn, isLocked: false } : conn
         )
       );
-      Alert.alert('Error', 'Failed to lock account. Please try again.');
+      Alert.alert(t('common.error'), t('connections.alertLockFailed'));
       return false;
     }
   };
@@ -1584,7 +1586,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         
         // Revert optimistic update on error
         loadConnections();
-        Alert.alert('Error', 'Failed to remove connection. Please try again.');
+        Alert.alert(t('common.error'), t('connections.alertRemoveFailed'));
         return;
       }
 
@@ -1607,16 +1609,16 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
               console.error('Error in removeConnection:', error);
       // Revert optimistic update on error
       loadConnections();
-              Alert.alert('Error', 'Failed to remove connection. Please try again.');
+              Alert.alert(t('common.error'), t('connections.alertRemoveFailed'));
             }
   };
 
   const showAddConnectionOptions = (): void => {
-    Alert.alert('Add Connection', 'Choose how you want to connect', [
-      { text: 'Invite by Phone', onPress: () => setShowInviteByPhoneModal(true) },
-      { text: 'Generate Code', onPress: () => generateConnectionCode() },
-      { text: 'Enter Code', onPress: () => setShowEnterCodeModal(true) },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('connections.alertAddConnectionTitle'), t('connections.alertAddConnectionMessage'), [
+      { text: t('connections.alertInviteByPhone'), onPress: () => setShowInviteByPhoneModal(true) },
+      { text: t('connections.alertGenerateCode'), onPress: () => generateConnectionCode() },
+      { text: t('connections.alertEnterCode'), onPress: () => setShowEnterCodeModal(true) },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -1690,8 +1692,8 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
 
   const connectionCountLabel =
     connections.length === 1
-      ? '1 connection'
-      : `${connections.length} connection${connections.length === 1 ? '' : 's'}`;
+      ? t('common.oneConnection')
+      : t('common.connectionsCount', { count: connections.length });
 
   return (
     <View style={styles.container}>
@@ -1730,8 +1732,8 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             <View style={[styles.quickActionIconContainer, styles.quickActionIconOnSolid]}>
               <Ionicons name="call" size={22} color="#2563EB" />
             </View>
-            <Text style={styles.quickActionTitle}>Invite by Phone</Text>
-            <Text style={styles.quickActionSubtitle}>Send invitation via phone</Text>
+            <Text style={styles.quickActionTitle}>{t('connections.inviteByPhone')}</Text>
+            <Text style={styles.quickActionSubtitle}>{t('connections.inviteByPhoneSubtitle')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1748,9 +1750,9 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
               )}
             </View>
             <Text style={styles.quickActionTitle}>
-              {generatingCode ? 'Generating...' : 'Generate Code'}
+              {generatingCode ? t('connections.generating') : t('connections.generateCode')}
             </Text>
-            <Text style={styles.quickActionSubtitle}>Create a code to share</Text>
+            <Text style={styles.quickActionSubtitle}>{t('connections.generateCodeSubtitle')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1761,15 +1763,15 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             <View style={[styles.quickActionIconContainer, styles.quickActionIconOnSolid]}>
               <Ionicons name="keypad" size={22} color="#6366F1" />
             </View>
-            <Text style={styles.quickActionTitle}>Enter Code</Text>
-            <Text style={styles.quickActionSubtitle}>Join using a code</Text>
+            <Text style={styles.quickActionTitle}>{t('connections.enterCode')}</Text>
+            <Text style={styles.quickActionSubtitle}>{t('connections.enterCodeSubtitle')}</Text>
           </TouchableOpacity>
         </ScrollView>
         {/* Pending Invitations Section */}
         {pendingInvitations.length > 0 && (
           <View style={styles.invitationsSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Pending Invitations</Text>
+              <Text style={styles.sectionTitle}>{t('connections.pendingInvitations')}</Text>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{pendingInvitations.length}</Text>
               </View>
@@ -1785,7 +1787,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                     </View>
                     <View style={styles.invitationDetails}>
                       <Text style={styles.invitationName}>{invitation.inviterName}</Text>
-                      <Text style={styles.invitationText}>Wants to connect with you</Text>
+                      <Text style={styles.invitationText}>{t('connections.wantsToConnect')}</Text>
                     </View>
                   </View>
                   <View style={styles.invitationActions}>
@@ -1795,7 +1797,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                       activeOpacity={0.8}
                     >
                       <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                      <Text style={styles.acceptButtonText}>Accept</Text>
+                      <Text style={styles.acceptButtonText}>{t('common.accept')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.rejectButton}
@@ -1803,7 +1805,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                       activeOpacity={0.8}
                     >
                       <Ionicons name="close-circle" size={18} color="#EF4444" />
-                      <Text style={styles.rejectButtonText}>Reject</Text>
+                      <Text style={styles.rejectButtonText}>{t('common.reject')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1815,22 +1817,22 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6366F1" />
-            <Text style={styles.loadingText}>Loading connections...</Text>
+            <Text style={styles.loadingText}>{t('common.loadingConnections')}</Text>
           </View>
         ) : connections.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyStateIcon}>
               <Ionicons name="people-outline" size={64} color="#C7D2FE" />
             </View>
-            <Text style={styles.emptyStateTitle}>No connections yet</Text>
+            <Text style={styles.emptyStateTitle}>{t('connections.noConnectionsTitle')}</Text>
             <Text style={styles.emptyStateSubtext}>
-              Invite someone by phone or share a connection code to get started.
+              {t('connections.noConnectionsSubtitle')}
             </Text>
           </View>
         ) : (
           <View style={styles.connectionsSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Your Connections</Text>
+              <Text style={styles.sectionTitle}>{t('connections.yourConnections')}</Text>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{connections.length}</Text>
               </View>
@@ -1859,9 +1861,9 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             <Ionicons name="shield-checkmark" size={22} color="#6366F1" />
           </View>
           <View style={styles.safetyBannerTextWrap}>
-            <Text style={styles.safetyBannerTitle}>Your safety, your control</Text>
+            <Text style={styles.safetyBannerTitle}>{t('connections.safetyBannerTitle')}</Text>
             <Text style={styles.safetyBannerSubtitle}>
-              You can manage your connections and privacy settings at any time.
+              {t('connections.safetyBannerSubtitle')}
             </Text>
           </View>
           <TouchableOpacity
@@ -1869,7 +1871,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             onPress={() => navigation.navigate('UserManual')}
             activeOpacity={0.85}
           >
-            <Text style={styles.safetyBannerButtonText}>Learn more</Text>
+            <Text style={styles.safetyBannerButtonText}>{t('connections.learnMore')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -1900,7 +1902,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
               onPress={(e) => e.stopPropagation()}
             >
               <View style={styles.invitePhoneModalHeader}>
-                <Text style={styles.invitePhoneModalTitle}>Invite by Phone</Text>
+                <Text style={styles.invitePhoneModalTitle}>{t('connections.inviteByPhoneModalTitle')}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowInviteByPhoneModal(false);
@@ -1918,7 +1920,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                     <TextInput
                       ref={phoneInputRef}
                       style={styles.phoneInput}
-                    placeholder="Enter 11-digit phone number"
+                    placeholder={t('connections.phonePlaceholder')}
                       placeholderTextColor="#8E8E93"
                       value={phoneInput}
                       onChangeText={(text) => {
@@ -1944,7 +1946,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                     ) : (
                       <>
                       <Ionicons name="send" size={18} color="#FFFFFF" />
-                      <Text style={styles.invitePhoneModalButtonText}>Send Invitation</Text>
+                      <Text style={styles.invitePhoneModalButtonText}>{t('connections.sendInvitation')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -1952,7 +1954,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                 <View style={styles.invitePhoneModalInfo}>
                   <Ionicons name="information-circle-outline" size={14} color="#8E8E93" />
                   <Text style={styles.invitePhoneModalInfoText}>
-                    Invitation expires in 7 days
+                    {t('connections.invitationExpires')}
                     </Text>
                   </View>
                 </View>
@@ -1983,7 +1985,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.invitePhoneModalHeader}>
-              <Text style={styles.invitePhoneModalTitle}>Your Connection Code</Text>
+              <Text style={styles.invitePhoneModalTitle}>{t('connections.yourConnectionCode')}</Text>
                 <TouchableOpacity
                   onPress={() => {
                   setShowGenerateCodeModal(false);
@@ -2001,7 +2003,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                   </View>
 
               <Text style={styles.codeDisplayHint}>
-                Share this code with others to connect. The code expires in 24 hours.
+                {t('connections.codeExpiresHint')}
                         </Text>
 
               <TouchableOpacity
@@ -2009,11 +2011,11 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                 onPress={async () => {
                   // Copy to clipboard
                   await Clipboard.setStringAsync(connectionCode);
-                  Alert.alert('Copied!', 'Connection code copied to clipboard.');
+                  Alert.alert(t('common.copied'), t('connections.alertCodeCopied'));
                 }}
               >
                 <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.invitePhoneModalButtonText}>Copy Code</Text>
+                <Text style={styles.invitePhoneModalButtonText}>{t('connections.copyCode')}</Text>
               </TouchableOpacity>
                       </View>
           </Pressable>
@@ -2046,7 +2048,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
               onPress={(e) => e.stopPropagation()}
             >
               <View style={styles.invitePhoneModalHeader}>
-                <Text style={styles.invitePhoneModalTitle}>Enter Connection Code</Text>
+                <Text style={styles.invitePhoneModalTitle}>{t('connections.enterConnectionCode')}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowEnterCodeModal(false);
@@ -2064,7 +2066,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                     <TextInput
                     ref={codeInputRef}
                       style={styles.phoneInput}
-                    placeholder="Enter 6-digit code"
+                    placeholder={t('connections.codePlaceholder')}
                       placeholderTextColor="#8E8E93"
                     value={codeInput}
                       onChangeText={(text) => {
@@ -2090,7 +2092,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                     ) : (
                       <>
                       <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                      <Text style={styles.invitePhoneModalButtonText}>Connect</Text>
+                      <Text style={styles.invitePhoneModalButtonText}>{t('common.connect')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -2098,7 +2100,7 @@ export default function ConnectionScreen({ navigation }: ConnectionScreenProps) 
                 <View style={styles.invitePhoneModalInfo}>
                   <Ionicons name="information-circle-outline" size={14} color="#8E8E93" />
                   <Text style={styles.invitePhoneModalInfoText}>
-                    Enter the 6-digit code shared by the other person
+                    {t('connections.enterCodeHint')}
                     </Text>
                   </View>
                 </View>

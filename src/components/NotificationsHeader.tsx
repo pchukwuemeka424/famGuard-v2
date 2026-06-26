@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 
 const HEADER_BG = '#FFFFFF';
 const HEADER_BORDER = '#E2E8F0';
@@ -20,12 +21,14 @@ export default function NotificationsHeader({
   onBackPress,
   onMarkAllRead,
 }: NotificationsHeaderProps) {
+  const { t } = useTranslation();
+
   const subtitle =
     totalCount === 0
-      ? 'No alerts yet'
+      ? t('notifications.noAlertsYet')
       : unreadCount > 0
-        ? `${unreadCount} unread · ${totalCount} total`
-        : `${totalCount} notification${totalCount === 1 ? '' : 's'} · All caught up`;
+        ? t('notifications.unreadTotal', { unread: unreadCount, total: totalCount })
+        : t('notifications.allCaughtUp', { total: totalCount });
 
   return (
     <View style={styles.container}>
@@ -35,7 +38,7 @@ export default function NotificationsHeader({
             onPress={onBackPress}
             style={styles.iconButton}
             activeOpacity={0.75}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.back')}
           >
             <Ionicons name="arrow-back" size={20} color="#1E293B" />
           </TouchableOpacity>
@@ -45,10 +48,10 @@ export default function NotificationsHeader({
               onPress={onMarkAllRead}
               style={styles.markAllButton}
               activeOpacity={0.75}
-              accessibilityLabel="Mark all as read"
+              accessibilityLabel={t('notifications.markAllRead')}
             >
               <Ionicons name="checkmark-done-outline" size={16} color="#2563EB" />
-              <Text style={styles.markAllText}>Mark all read</Text>
+              <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.iconButtonPlaceholder} />
@@ -57,7 +60,7 @@ export default function NotificationsHeader({
 
         <View style={styles.textBlock}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>Notifications</Text>
+            <Text style={styles.title}>{t('notifications.title')}</Text>
             {unreadCount > 0 ? (
               <View style={styles.unreadBadge}>
                 <Text style={styles.unreadBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>

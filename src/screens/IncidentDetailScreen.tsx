@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useIncidents } from '../context/IncidentContext';
+import { useTranslation } from '../context/LanguageContext';
 import type { RootStackParamList } from '../types';
 
 type IncidentDetailScreenRouteProp = RouteProp<RootStackParamList, 'IncidentDetail'>;
@@ -27,10 +28,17 @@ interface IncidentDetailScreenProps {
 const SCREEN_BG = '#E8EEF6';
 
 export default function IncidentDetailScreen({ route, navigation }: IncidentDetailScreenProps) {
+  const { t } = useTranslation();
   const { incident } = route.params;
   const { upvoteIncident, userLocation, calculateDistance } = useIncidents();
   const insets = useSafeAreaInsets();
   const accentColor = getCategoryColor(incident.category);
+
+  const getCategoryLabel = (category: string): string => {
+    const key = `common.incidentCategories.${category.toLowerCase()}`;
+    const translated = t(key);
+    return translated !== key ? translated : category;
+  };
 
   const distance = calculateDistance(
     userLocation.latitude,
@@ -70,12 +78,12 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
             <View style={styles.heroTopRow}>
               <View style={[styles.categoryPill, { backgroundColor: accentColor + '18' }]}>
                 <Ionicons name={getCategoryIcon(incident.category)} size={14} color={accentColor} />
-                <Text style={[styles.categoryPillText, { color: accentColor }]}>{incident.category}</Text>
+                <Text style={[styles.categoryPillText, { color: accentColor }]}>{getCategoryLabel(incident.category)}</Text>
               </View>
               {incident.confirmed ? (
                 <View style={styles.verifiedBadge}>
                   <Ionicons name="checkmark-circle" size={15} color="#22C55E" />
-                  <Text style={styles.verifiedText}>Verified</Text>
+                  <Text style={styles.verifiedText}>{t('common.verified')}</Text>
                 </View>
               ) : null}
             </View>
@@ -87,21 +95,21 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
 
         {incident.imageUrl ? (
           <View style={styles.imageCard}>
-            <Text style={styles.cardLabel}>Photo</Text>
+            <Text style={styles.cardLabel}>{t('common.photo')}</Text>
             <Image source={{ uri: incident.imageUrl }} style={styles.incidentImage} resizeMode="cover" />
           </View>
         ) : null}
 
         <View style={styles.infoCard}>
-          <Text style={styles.cardLabel}>Details</Text>
+          <Text style={styles.cardLabel}>{t('common.details')}</Text>
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
               <View style={[styles.infoIconWrap, { backgroundColor: '#EFF6FF' }]}>
                 <Ionicons name="time-outline" size={18} color="#2563EB" />
               </View>
               <View style={styles.infoCopy}>
-                <Text style={styles.infoLabel}>Reported</Text>
-                <Text style={styles.infoValue}>{getTimeAgo(incident.createdAt)}</Text>
+                <Text style={styles.infoLabel}>{t('incidents.reported')}</Text>
+                <Text style={styles.infoValue}>{getTimeAgo(incident.createdAt, t)}</Text>
               </View>
             </View>
 
@@ -110,8 +118,8 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
                 <Ionicons name="navigate-outline" size={18} color="#F97316" />
               </View>
               <View style={styles.infoCopy}>
-                <Text style={styles.infoLabel}>Distance</Text>
-                <Text style={styles.infoValue}>{distance.toFixed(1)} km away</Text>
+                <Text style={styles.infoLabel}>{t('incidents.distance')}</Text>
+                <Text style={styles.infoValue}>{t('common.kmAway', { distance: distance.toFixed(1) })}</Text>
               </View>
             </View>
 
@@ -120,9 +128,9 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
                 <Ionicons name="person-outline" size={18} color="#22C55E" />
               </View>
               <View style={styles.infoCopy}>
-                <Text style={styles.infoLabel}>Reporter</Text>
+                <Text style={styles.infoLabel}>{t('incidents.reporter')}</Text>
                 <Text style={styles.infoValue}>
-                  {incident.reporter.isAnonymous ? 'Anonymous' : incident.reporter.name}
+                  {incident.reporter.isAnonymous ? t('common.anonymous') : incident.reporter.name}
                 </Text>
               </View>
             </View>
@@ -133,7 +141,7 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
                   <Ionicons name="location-outline" size={18} color="#64748B" />
                 </View>
                 <View style={styles.infoCopy}>
-                  <Text style={styles.infoLabel}>Location</Text>
+                  <Text style={styles.infoLabel}>{t('common.location')}</Text>
                   <Text style={styles.infoValue}>{incident.location.address}</Text>
                 </View>
               </View>
@@ -142,7 +150,7 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
         </View>
 
         <View style={styles.mapCard}>
-          <Text style={styles.cardLabel}>Map</Text>
+          <Text style={styles.cardLabel}>{t('common.map')}</Text>
           <View style={styles.mapContainer}>
             <MapView
               provider={PROVIDER_GOOGLE}
@@ -159,7 +167,7 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
                   <Ionicons name={getCategoryIcon(incident.category)} size={18} color="#FFFFFF" />
                 </View>
               </Marker>
-              <Marker coordinate={userLocation} title="You">
+              <Marker coordinate={userLocation} title={t('incidents.mapMarkerYou')}>
                 <View style={styles.userMarker}>
                   <Ionicons name="person" size={14} color="#FFFFFF" />
                 </View>
@@ -171,12 +179,12 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
         <View style={styles.actions}>
           <TouchableOpacity style={styles.upvoteButton} onPress={() => upvoteIncident(incident.id)} activeOpacity={0.85}>
             <Ionicons name="arrow-up" size={20} color="#2563EB" />
-            <Text style={styles.upvoteText}>{incident.upvotes} upvotes</Text>
+            <Text style={styles.upvoteText}>{t('incidents.upvotes', { count: incident.upvotes })}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.directionsButton} onPress={handleDirections} activeOpacity={0.85}>
             <Ionicons name="navigate" size={20} color="#FFFFFF" />
-            <Text style={styles.directionsButtonText}>Directions</Text>
+            <Text style={styles.directionsButtonText}>{t('common.directions')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -184,11 +192,11 @@ export default function IncidentDetailScreen({ route, navigation }: IncidentDeta
   );
 }
 
-function getTimeAgo(timestamp: string): string {
+function getTimeAgo(timestamp: string, t: (key: string) => string): string {
   const now = new Date();
   const time = new Date(timestamp);
   const diff = Math.floor((now.getTime() - time.getTime()) / 1000 / 60);
-  if (diff < 1) return 'Just now';
+  if (diff < 1) return t('common.justNow');
   if (diff < 60) return `${diff} min ago`;
   const hours = Math.floor(diff / 60);
   if (hours < 24) return `${hours} hr ago`;

@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useIncidents } from '../context/IncidentContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { locationService } from '../services/locationService';
 import {
   pickIncidentImageFromLibrary,
@@ -49,6 +50,7 @@ const CATEGORY_CONFIG: Record<
 };
 
 export default function ReportIncidentScreen({ navigation }: ReportIncidentScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { addIncident } = useIncidents();
   const { user } = useAuth();
@@ -67,6 +69,12 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
   const [lastAutoFilledType, setLastAutoFilledType] = useState<string>('');
   const [lastAutoFilledTitle, setLastAutoFilledTitle] = useState<string>('');
   const [lastAutoFilledDescription, setLastAutoFilledDescription] = useState<string>('');
+
+  const getCategoryLabel = (category: string): string => {
+    const key = `common.incidentCategories.${category.toLowerCase()}`;
+    const translated = t(key);
+    return translated !== key ? translated : category;
+  };
 
   useEffect(() => {
     loadCurrentLocation();
@@ -163,46 +171,46 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
   };
 
   const handlePickImage = (): void => {
-    Alert.alert('Add Photo', 'Attach a photo to help others understand the situation.', [
+    Alert.alert(t('reportIncident.alertAddPhotoTitle'), t('reportIncident.alertAddPhotoMessage'), [
       {
-        text: 'Take Photo',
+        text: t('reportIncident.alertTakePhoto'),
         onPress: async () => {
           try {
             const selection = await takeIncidentPhoto();
             applySelectedImage(selection);
           } catch (error: any) {
-            Alert.alert('Camera', error.message || 'Unable to open camera.');
+            Alert.alert(t('common.photo'), error.message || t('reportIncident.alertCameraFailed'));
           }
         },
       },
       {
-        text: 'Choose from Library',
+        text: t('reportIncident.alertChooseFromLibrary'),
         onPress: async () => {
           try {
             const selection = await pickIncidentImageFromLibrary();
             applySelectedImage(selection);
           } catch (error: any) {
-            Alert.alert('Photos', error.message || 'Unable to open photo library.');
+            Alert.alert(t('common.photo'), error.message || t('reportIncident.alertPhotosFailed'));
           }
         },
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
   const handleSubmit = async (): Promise<void> => {
     if (!type) {
-      Alert.alert('Missing type', 'Please select an incident type.');
+      Alert.alert(t('common.error'), t('reportIncident.alertMissingType'));
       return;
     }
 
     if (!title.trim() || !description.trim()) {
-      Alert.alert('Missing details', 'Please add a title and description.');
+      Alert.alert(t('common.error'), t('reportIncident.alertMissingDetails'));
       return;
     }
 
     if (!currentLocation) {
-      Alert.alert('Location required', 'Please wait for your location or refresh it.');
+      Alert.alert(t('common.error'), t('reportIncident.alertLocationRequired'));
       return;
     }
 
@@ -219,7 +227,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
             address: currentLocation.address || undefined,
           },
           reporter: {
-            name: isAnonymous ? 'Anonymous' : user?.name || 'User',
+            name: isAnonymous ? t('common.anonymous') : user?.name || t('common.unknown'),
             isAnonymous,
           },
           category: type,
@@ -228,11 +236,11 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
         selectedImageMimeType
       );
 
-      Alert.alert('Report submitted', 'Thank you for helping keep the community safe.', [
-        { text: 'Done', onPress: () => navigation.goBack() },
+      Alert.alert(t('reportIncident.alertReportSubmittedTitle'), t('reportIncident.alertReportSubmitted'), [
+        { text: t('common.done'), onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to submit report.');
+      Alert.alert(t('common.error'), error.message || t('reportIncident.alertSubmitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -245,8 +253,8 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
           <Ionicons name="close" size={22} color="#0F172A" />
         </TouchableOpacity>
         <View style={styles.topBarCopy}>
-          <Text style={styles.topBarTitle}>Report Incident</Text>
-          <Text style={styles.topBarSubtitle}>Share what happened nearby</Text>
+          <Text style={styles.topBarTitle}>{t('reportIncident.title')}</Text>
+          <Text style={styles.topBarSubtitle}>{t('reportIncident.subtitle')}</Text>
         </View>
         <View style={styles.topBarSpacer} />
       </View>
@@ -263,7 +271,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Incident type</Text>
+            <Text style={styles.cardLabel}>{t('reportIncident.incidentType')}</Text>
             <TouchableOpacity
               style={styles.dropdown}
               onPress={() => setShowTypePicker((prev) => !prev)}
@@ -284,10 +292,10 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
                         color={(CATEGORY_CONFIG[type] || CATEGORY_CONFIG.Other).color}
                       />
                     </View>
-                    <Text style={styles.dropdownValue}>{type}</Text>
+                    <Text style={styles.dropdownValue}>{getCategoryLabel(type)}</Text>
                   </>
                 ) : (
-                  <Text style={styles.dropdownPlaceholder}>Select type</Text>
+                  <Text style={styles.dropdownPlaceholder}>{t('reportIncident.selectType')}</Text>
                 )}
               </View>
               <Ionicons name={showTypePicker ? 'chevron-up' : 'chevron-down'} size={18} color="#64748B" />
@@ -317,7 +325,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
                           <Ionicons name={config.icon} size={16} color={config.color} />
                         </View>
                         <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
-                          {category}
+                          {getCategoryLabel(category)}
                         </Text>
                       </View>
                       {active ? <Ionicons name="checkmark" size={18} color="#2563EB" /> : null}
@@ -329,10 +337,10 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Details</Text>
+            <Text style={styles.cardLabel}>{t('common.details')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Title — brief summary"
+              placeholder={t('reportIncident.titlePlaceholder')}
               placeholderTextColor="#94A3B8"
               value={title}
               onChangeText={setTitle}
@@ -341,7 +349,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
             <Text style={styles.charCount}>{title.length}/100</Text>
             <TextInput
               style={[styles.input, styles.textArea, styles.inputSpacing]}
-              placeholder="Description — what happened and any helpful details"
+              placeholder={t('reportIncident.descriptionPlaceholder')}
               placeholderTextColor="#94A3B8"
               value={description}
               onChangeText={setDescription}
@@ -353,8 +361,8 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
 
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
-              <Text style={[styles.cardLabel, styles.cardLabelInline]}>Photo</Text>
-              <Text style={styles.optionalTag}>Optional</Text>
+              <Text style={[styles.cardLabel, styles.cardLabelInline]}>{t('common.photo')}</Text>
+              <Text style={styles.optionalTag}>{t('common.optional')}</Text>
             </View>
 
             {selectedImageUri ? (
@@ -363,14 +371,14 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
                 <View style={styles.imageActions}>
                   <TouchableOpacity style={styles.imageActionButton} onPress={handlePickImage}>
                     <Ionicons name="swap-horizontal" size={16} color="#2563EB" />
-                    <Text style={styles.imageActionText}>Replace</Text>
+                    <Text style={styles.imageActionText}>{t('common.replace')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.imageActionButton, styles.imageRemoveButton]}
                     onPress={clearSelectedImage}
                   >
                     <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                    <Text style={[styles.imageActionText, styles.imageRemoveText]}>Remove</Text>
+                    <Text style={[styles.imageActionText, styles.imageRemoveText]}>{t('common.remove')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -381,8 +389,8 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
                     <Ionicons name="camera-outline" size={20} color="#2563EB" />
                   </View>
                   <View style={styles.uploadCopy}>
-                    <Text style={styles.uploadTitle}>Add photo</Text>
-                    <Text style={styles.uploadSubtitle}>Camera or library</Text>
+                    <Text style={styles.uploadTitle}>{t('reportIncident.addPhoto')}</Text>
+                    <Text style={styles.uploadSubtitle}>{t('reportIncident.addPhotoSubtitle')}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
                 </TouchableOpacity>
@@ -392,14 +400,14 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
 
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
-              <Text style={[styles.cardLabel, styles.cardLabelInline]}>Location</Text>
+              <Text style={[styles.cardLabel, styles.cardLabelInline]}>{t('common.location')}</Text>
               <TouchableOpacity onPress={loadCurrentLocation} disabled={locationLoading} style={styles.refreshChip}>
                 {locationLoading ? (
                   <ActivityIndicator size="small" color="#2563EB" />
                 ) : (
                   <>
                     <Ionicons name="refresh" size={14} color="#2563EB" />
-                    <Text style={styles.refreshChipText}>Refresh</Text>
+                    <Text style={styles.refreshChipText}>{t('common.refresh')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -408,7 +416,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
             {locationLoading ? (
               <View style={styles.locationState}>
                 <ActivityIndicator size="small" color="#2563EB" />
-                <Text style={styles.locationStateText}>Getting your location...</Text>
+                <Text style={styles.locationStateText}>{t('reportIncident.gettingLocation')}</Text>
               </View>
             ) : locationError ? (
               <View style={[styles.locationState, styles.locationErrorState]}>
@@ -422,7 +430,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
                 </View>
                 <View style={styles.locationCopy}>
                   <Text style={styles.locationAddress}>
-                    {currentLocation.address || 'Current GPS location captured'}
+                    {currentLocation.address || t('reportIncident.currentGpsCaptured')}
                   </Text>
                   <Text style={styles.locationCoords}>
                     {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
@@ -431,25 +439,25 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
               </View>
             ) : null}
 
-            <Text style={styles.locationHint}>Only users within 5 km will see this report.</Text>
+            <Text style={styles.locationHint}>{t('reportIncident.locationHint')}</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>When did this happen?</Text>
+            <Text style={styles.cardLabel}>{t('reportIncident.whenDidThisHappen')}</Text>
             <View style={styles.segmentRow}>
               <TouchableOpacity
                 style={[styles.segmentButton, isHappeningNow && styles.segmentButtonActive]}
                 onPress={() => setIsHappeningNow(true)}
               >
                 <Ionicons name="flash-outline" size={16} color={isHappeningNow ? '#2563EB' : '#64748B'} />
-                <Text style={[styles.segmentText, isHappeningNow && styles.segmentTextActive]}>Happening now</Text>
+                <Text style={[styles.segmentText, isHappeningNow && styles.segmentTextActive]}>{t('reportIncident.happeningNow')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.segmentButton, !isHappeningNow && styles.segmentButtonActive]}
                 onPress={() => setIsHappeningNow(false)}
               >
                 <Ionicons name="time-outline" size={16} color={!isHappeningNow ? '#2563EB' : '#64748B'} />
-                <Text style={[styles.segmentText, !isHappeningNow && styles.segmentTextActive]}>Earlier</Text>
+                <Text style={[styles.segmentText, !isHappeningNow && styles.segmentTextActive]}>{t('reportIncident.earlier')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -457,8 +465,8 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
           <View style={styles.card}>
             <View style={styles.toggleRow}>
               <View style={styles.toggleCopy}>
-                <Text style={styles.toggleTitle}>Report anonymously</Text>
-                <Text style={styles.toggleSubtitle}>Your name will be hidden from the public feed</Text>
+                <Text style={styles.toggleTitle}>{t('reportIncident.reportAnonymously')}</Text>
+                <Text style={styles.toggleSubtitle}>{t('reportIncident.reportAnonymouslySubtitle')}</Text>
               </View>
               <TouchableOpacity
                 style={[styles.toggle, isAnonymous && styles.toggleActive]}
@@ -473,7 +481,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
           <View style={styles.notice}>
             <Ionicons name="information-circle-outline" size={18} color="#2563EB" />
             <Text style={styles.noticeText}>
-              False reports may result in account suspension. Only share accurate information.
+              {t('reportIncident.falseReportsNotice')}
             </Text>
           </View>
         </ScrollView>
@@ -490,7 +498,7 @@ export default function ReportIncidentScreen({ navigation }: ReportIncidentScree
             ) : (
               <>
                 <Ionicons name="send" size={18} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>Submit Report</Text>
+                <Text style={styles.submitButtonText}>{t('reportIncident.submitReport')}</Text>
               </>
             )}
           </TouchableOpacity>

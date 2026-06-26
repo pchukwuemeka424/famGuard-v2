@@ -16,6 +16,7 @@ import MapView, { Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 import { offlineMapsService } from '../services/offlineMapsService';
 import { locationService } from '../services/locationService';
 import type { OfflineMap, OfflineMapDownloadProgress, Location } from '../types';
@@ -27,6 +28,7 @@ interface OfflineMapsScreenProps {
 }
 
 export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps) {
+  const { t } = useTranslation();
   const [offlineMaps, setOfflineMaps] = useState<OfflineMap[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [downloading, setDownloading] = useState<boolean>(false);
@@ -53,7 +55,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
       setTotalStorage(storage);
     } catch (error) {
       console.error('Error loading offline maps:', error);
-      Alert.alert('Error', 'Failed to load offline maps.');
+      Alert.alert(t('common.error'), t('offlineMaps.alertLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -79,12 +81,12 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
 
   const handleDownloadMap = async () => {
     if (!mapName.trim()) {
-      Alert.alert('Error', 'Please enter a name for the map.');
+      Alert.alert(t('common.error'), t('offlineMaps.alertEnterMapName'));
       return;
     }
 
     if (!selectedRegion) {
-      Alert.alert('Error', 'Please select a region on the map.');
+      Alert.alert(t('common.error'), t('offlineMaps.alertSelectRegion'));
       return;
     }
 
@@ -109,14 +111,14 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
         }
       );
 
-      Alert.alert('Success', `Map "${map.name}" downloaded successfully!`);
+      Alert.alert(t('common.success'), t('offlineMaps.alertDownloadSuccess', { name: map.name }));
       setShowDownloadModal(false);
       setMapName('');
       setDownloadProgress(null);
       await loadOfflineMaps();
     } catch (error: any) {
       console.error('Error downloading map:', error);
-      Alert.alert('Error', error.message || 'Failed to download map. Please try again.');
+      Alert.alert(t('common.error'), error.message || t('offlineMaps.alertDownloadFailed'));
     } finally {
       setDownloading(false);
       setDownloadProgress(null);
@@ -125,12 +127,12 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
 
   const handleDeleteMap = (map: OfflineMap) => {
     Alert.alert(
-      'Delete Map',
-      `Are you sure you want to delete "${map.name}"? This will free up ${formatBytes(map.sizeBytes)} of storage.`,
+      t('offlineMaps.alertDeleteMapTitle'),
+      t('offlineMaps.alertDeleteMapMessage', { name: map.name, size: formatBytes(map.sizeBytes) }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -138,7 +140,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
               await loadOfflineMaps();
             } catch (error) {
               console.error('Error deleting map:', error);
-              Alert.alert('Error', 'Failed to delete map.');
+              Alert.alert(t('common.error'), t('offlineMaps.alertDeleteFailed'));
             }
           },
         },
@@ -174,7 +176,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to get current location.');
+      Alert.alert(t('common.error'), t('offlineMaps.alertLocationFailed'));
     }
   };
 
@@ -188,7 +190,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
           >
             <Ionicons name="arrow-back" size={24} color="#1C1C1E" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Offline Maps</Text>
+          <Text style={styles.headerTitle}>{t('offlineMaps.title')}</Text>
           <View style={styles.headerButton} />
         </View>
         <View style={styles.loadingContainer}>
@@ -208,7 +210,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
         >
           <Ionicons name="arrow-back" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Offline Maps</Text>
+        <Text style={styles.headerTitle}>{t('offlineMaps.title')}</Text>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => setShowDownloadModal(true)}
@@ -230,16 +232,14 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
         {offlineMaps.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="map-outline" size={64} color="#C7C7CC" />
-            <Text style={styles.emptyTitle}>No Offline Maps</Text>
-            <Text style={styles.emptyText}>
-              Download maps for areas with poor connectivity to use them offline.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('offlineMaps.noOfflineMaps')}</Text>
+            <Text style={styles.emptyText}>{t('offlineMaps.noOfflineMapsText')}</Text>
             <TouchableOpacity
               style={styles.downloadButton}
               onPress={() => setShowDownloadModal(true)}
             >
               <Ionicons name="download" size={20} color="#FFFFFF" />
-              <Text style={styles.downloadButtonText}>Download Your First Map</Text>
+              <Text style={styles.downloadButtonText}>{t('offlineMaps.downloadFirstMap')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -281,7 +281,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
       >
         <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Download Offline Map</Text>
+            <Text style={styles.modalTitle}>{t('offlineMaps.downloadOfflineMap')}</Text>
             {!downloading && (
               <TouchableOpacity
                 style={styles.modalCloseButton}
@@ -295,10 +295,10 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             {/* Map Name Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Map Name</Text>
+              <Text style={styles.inputLabel}>{t('offlineMaps.mapName')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g., Home Area, Work Route"
+                placeholder={t('offlineMaps.mapNamePlaceholder')}
                 value={mapName}
                 onChangeText={setMapName}
                 editable={!downloading}
@@ -308,10 +308,8 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
 
             {/* Map Preview */}
             <View style={styles.mapContainer}>
-              <Text style={styles.mapLabel}>Select Region</Text>
-              <Text style={styles.mapHint}>
-                Pan and zoom to select the area you want to download
-              </Text>
+              <Text style={styles.mapLabel}>{t('offlineMaps.selectRegion')}</Text>
+              <Text style={styles.mapHint}>{t('offlineMaps.selectRegionHint')}</Text>
               <MapView
                 ref={mapRef}
                 provider={PROVIDER_GOOGLE}
@@ -340,7 +338,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
             {downloading && downloadProgress && (
               <View style={styles.progressContainer}>
                 <View style={styles.progressHeader}>
-                  <Text style={styles.progressText}>Downloading...</Text>
+                  <Text style={styles.progressText}>{t('offlineMaps.downloading')}</Text>
                   <Text style={styles.progressPercentage}>
                     {downloadProgress.percentage}%
                   </Text>
@@ -370,7 +368,7 @@ export default function OfflineMapsScreen({ navigation }: OfflineMapsScreenProps
                 disabled={!mapName.trim() || !selectedRegion}
               >
                 <Ionicons name="download" size={20} color="#FFFFFF" />
-                <Text style={styles.downloadButtonText}>Download Map</Text>
+                <Text style={styles.downloadButtonText}>{t('offlineMaps.downloadMap')}</Text>
               </TouchableOpacity>
             )}
           </ScrollView>

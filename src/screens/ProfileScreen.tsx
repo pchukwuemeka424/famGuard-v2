@@ -19,6 +19,7 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { useConnection } from '../context/ConnectionContext';
 import { supabase } from '../lib/supabase';
 import { pushNotificationService } from '../services/pushNotificationService';
@@ -87,6 +88,7 @@ const faqData: FAQItem[] = [
 ];
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
+  const { t } = useTranslation();
   const { user, logout, deleteAccount, updateUser } = useAuth();
   const { locationSharingEnabled, setLocationSharingEnabled } = useConnection();
   const insets = useSafeAreaInsets();
@@ -393,7 +395,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       if (error) {
         console.error('Error saving notifications setting:', error);
-        Alert.alert('Error', 'Failed to save notification settings. Please try again.');
+        Alert.alert(t('common.error'), t('profile.alertSaveNotificationsFailed'));
         // Revert on error
         setNotificationsEnabled(!value);
       } else {
@@ -403,9 +405,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           const { status: verifyStatus } = await Notifications.getPermissionsAsync();
           if (verifyStatus === 'granted') {
             Alert.alert(
-              'Success',
-              'Push notifications enabled! You will receive emergency alerts and safety notifications.',
-              [{ text: 'OK' }]
+              t('common.success'),
+              t('profile.alertNotificationsEnabled'),
+              [{ text: t('common.ok') }]
             );
           } else {
             Alert.alert(
@@ -455,7 +457,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       if (error) {
         console.error('Error saving community reports setting:', error);
-        Alert.alert('Error', 'Failed to save community reports settings. Please try again.');
+        Alert.alert(t('common.error'), t('profile.alertSaveCommunityReportsFailed'));
         // Revert on error
         setCommunityReportsEnabled(!value);
       } else {
@@ -463,7 +465,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       }
     } catch (error) {
       console.error('Error saving community reports setting:', error);
-      Alert.alert('Error', 'Failed to save community reports settings. Please try again.');
+      Alert.alert(t('common.error'), t('profile.alertSaveCommunityReportsFailed'));
       // Revert on error
       setCommunityReportsEnabled(!value);
     } finally {
@@ -480,7 +482,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       await setLocationSharingEnabled(value);
     } catch (error) {
       console.error('Error saving location sharing setting:', error);
-      Alert.alert('Error', 'Failed to save location sharing settings. Please try again.');
+      Alert.alert(t('common.error'), t('profile.alertSaveLocationSharingFailed'));
     } finally {
       if (isMountedRef.current) {
         setSaving(false);
@@ -669,15 +671,15 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   const handleLogout = async (): Promise<void> => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('profile.alertSignOutTitle'),
+      t('profile.alertSignOutMessage'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Sign Out',
+          text: t('profile.signOut'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -701,9 +703,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             } catch (error) {
               console.error('Error during logout:', error);
               Alert.alert(
-                'Error',
-                'Failed to sign out. Please try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                t('profile.alertSignOutFailed'),
+                [{ text: t('common.ok') }]
               );
             } finally {
               if (isMountedRef.current) {
@@ -718,28 +720,27 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   const handleDeleteAccount = async (): Promise<void> => {
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone. All your data, connections, and settings will be permanently deleted.',
+      t('profile.alertDeleteAccountTitle'),
+      t('profile.alertDeleteAccountMessage'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
-            // Second confirmation
             Alert.alert(
-              'Final Confirmation',
-              'This will permanently delete your account and all associated data. Are you absolutely sure?',
+              t('profile.alertFinalConfirmationTitle'),
+              t('profile.alertFinalConfirmationMessage'),
               [
                 {
-                  text: 'Cancel',
+                  text: t('common.cancel'),
                   style: 'cancel',
                 },
                 {
-                  text: 'Yes, Delete My Account',
+                  text: t('profile.alertYesDeleteAccount'),
                   style: 'destructive',
                   onPress: async () => {
                     try {
@@ -763,9 +764,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                     } catch (error: any) {
                       console.error('Error during account deletion:', error);
                       Alert.alert(
-                        'Error',
-                        error.message || 'Failed to delete account. Please try again.',
-                        [{ text: 'OK' }]
+                        t('common.error'),
+                        error.message || t('profile.alertDeleteAccountFailed'),
+                        [{ text: t('common.ok') }]
                       );
                     } finally {
                       if (isMountedRef.current) {
@@ -834,13 +835,13 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       <View style={styles.container}>
         <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading profile...</Text>
+          <Text style={styles.loadingText}>{t('common.loadingProfile')}</Text>
         </View>
       </View>
     );
   }
 
-  const profileSubtitle = user?.name?.trim() || user?.email || 'Manage your account';
+  const profileSubtitle = user?.name?.trim() || user?.email || t('common.manageAccount');
 
   return (
     <View style={styles.container}>
@@ -852,14 +853,14 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionPersonalInfo')}</Text>
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={handleEditProfile}
             disabled={saving}
           >
             <Ionicons name="person-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Edit Profile</Text>
+            <Text style={styles.menuItemText}>{t('profile.editProfile')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -868,7 +869,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="people-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Connections</Text>
+            <Text style={styles.menuItemText}>{t('profile.connections')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -877,18 +878,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="document-text-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Emergency Notes</Text>
+            <Text style={styles.menuItemText}>{t('profile.emergencyNotes')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Safety & Privacy</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionSafetyPrivacy')}</Text>
           <View style={styles.menuItem}>
             <Ionicons name="location-outline" size={20} color="#000000" />
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemText}>Share Location</Text>
-              <Text style={styles.menuItemSubtext}>Visible to connections</Text>
+              <Text style={styles.menuItemText}>{t('profile.shareLocation')}</Text>
+              <Text style={styles.menuItemSubtext}>{t('profile.shareLocationSubtext')}</Text>
             </View>
             {saving ? (
               <ActivityIndicator size="small" color="#007AFF" />
@@ -905,8 +906,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <View style={styles.menuItem}>
             <Ionicons name="alert-circle-outline" size={20} color="#000000" />
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemText}>Community Reports</Text>
-              <Text style={styles.menuItemSubtext}>Show nearby incidents</Text>
+              <Text style={styles.menuItemText}>{t('profile.communityReports')}</Text>
+              <Text style={styles.menuItemSubtext}>{t('profile.communityReportsSubtext')}</Text>
             </View>
             {saving ? (
               <ActivityIndicator size="small" color="#007AFF" />
@@ -927,8 +928,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           >
             <Ionicons name="eye-outline" size={20} color="#000000" />
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemText}>Location Accuracy</Text>
-              <Text style={styles.menuItemSubtext}>Exact GPS or approximate</Text>
+              <Text style={styles.menuItemText}>{t('profile.locationAccuracy')}</Text>
+              <Text style={styles.menuItemSubtext}>{t('profile.locationAccuracySubtext')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
@@ -939,20 +940,20 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           >
             <Ionicons name="time-outline" size={20} color="#000000" />
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemText}>Location Update Frequency</Text>
-              <Text style={styles.menuItemSubtext}>How often location updates</Text>
+              <Text style={styles.menuItemText}>{t('profile.locationUpdateFrequency')}</Text>
+              <Text style={styles.menuItemSubtext}>{t('profile.locationUpdateFrequencySubtext')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionNotifications')}</Text>
           <View style={styles.menuItem}>
             <Ionicons name="notifications-outline" size={20} color="#000000" />
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemText}>Push Notifications</Text>
-              <Text style={styles.menuItemSubtext}>Receive safety alerts</Text>
+              <Text style={styles.menuItemText}>{t('profile.pushNotifications')}</Text>
+              <Text style={styles.menuItemSubtext}>{t('profile.pushNotificationsSubtext')}</Text>
             </View>
             {saving ? (
               <ActivityIndicator size="small" color="#007AFF" />
@@ -973,8 +974,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           >
             <Ionicons name="send-outline" size={20} color="#007AFF" />
             <View style={styles.menuItemContent}>
-              <Text style={[styles.menuItemText, { color: '#007AFF' }]}>Test Push Notification</Text>
-              <Text style={styles.menuItemSubtext}>Send a test notification to this device</Text>
+              <Text style={[styles.menuItemText, { color: '#007AFF' }]}>{t('profile.testPushNotification')}</Text>
+              <Text style={styles.menuItemSubtext}>{t('profile.testPushSubtext')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
@@ -984,20 +985,20 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="time-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Sleep Mode</Text>
+            <Text style={styles.menuItemText}>{t('profile.sleepMode')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Settings</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionAppSettings')}</Text>
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={handleLanguageRegion}
             disabled={saving}
           >
             <Ionicons name="language-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Language & Region</Text>
+            <Text style={styles.menuItemText}>{t('profile.languageRegion')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -1006,7 +1007,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="speedometer-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Units (km / miles)</Text>
+            <Text style={styles.menuItemText}>{t('profile.units')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -1015,7 +1016,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="battery-charging-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Battery Saving Mode</Text>
+            <Text style={styles.menuItemText}>{t('profile.batterySavingMode')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -1024,7 +1025,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="map-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Offline Maps</Text>
+            <Text style={styles.menuItemText}>{t('profile.offlineMaps')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
         </View>
@@ -1036,7 +1037,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="book-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Users Manual</Text>
+            <Text style={styles.menuItemText}>{t('profile.usersManual')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -1045,7 +1046,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="help-circle-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Help & Support</Text>
+            <Text style={styles.menuItemText}>{t('profile.helpSupport')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -1054,7 +1055,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="shield-checkmark-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Privacy Policy</Text>
+            <Text style={styles.menuItemText}>{t('profile.privacyPolicy')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -1063,13 +1064,13 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving}
           >
             <Ionicons name="document-text-outline" size={20} color="#000000" />
-            <Text style={styles.menuItemText}>Terms of Service</Text>
+            <Text style={styles.menuItemText}>{t('profile.termsOfService')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Management</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionAccountManagement')}</Text>
           <TouchableOpacity 
             style={[styles.deleteAccountButton, (saving || deletingAccount) && styles.deleteAccountButtonDisabled]} 
             onPress={handleDeleteAccount}
@@ -1080,7 +1081,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             ) : (
               <>
                 <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+                <Text style={styles.deleteAccountButtonText}>{t('profile.deleteAccount')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -1090,7 +1091,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             disabled={saving || deletingAccount}
           >
             <Ionicons name="globe-outline" size={20} color="#FF3B30" />
-            <Text style={styles.deleteAccountExternalButtonText}>Delete Account via Website</Text>
+            <Text style={styles.deleteAccountExternalButtonText}>{t('profile.deleteAccountViaWebsite')}</Text>
             <Ionicons name="open-outline" size={16} color="#FF3B30" />
           </TouchableOpacity>
         </View>
@@ -1103,7 +1104,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           {(saving || loggingOut) ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text style={styles.logoutButtonText}>Sign Out</Text>
+            <Text style={styles.logoutButtonText}>{t('profile.signOut')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -1129,7 +1130,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             >
               <Ionicons name="arrow-back" size={24} color="#000000" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Users Manual</Text>
+            <Text style={styles.modalTitle}>{t('profile.usersManual')}</Text>
             <View style={styles.placeholder} />
           </View>
 

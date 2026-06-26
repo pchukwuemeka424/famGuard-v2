@@ -7,6 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 import type { Connection } from '../types';
 
 interface ConnectionCardProps {
@@ -20,14 +21,15 @@ export default function ConnectionCard({
   onViewMap,
   onMoreOptions,
 }: ConnectionCardProps) {
-  const displayName = connection.connectedUserName || 'Unknown User';
+  const { t } = useTranslation();
+  const displayName = connection.connectedUserName || t('common.unknownUser');
 
   return (
     <View style={[styles.card, connection.isLocked && styles.cardEmergency]}>
       {connection.isLocked && (
         <View style={styles.emergencyBanner}>
           <Ionicons name="warning" size={14} color="#FFFFFF" />
-          <Text style={styles.emergencyBannerText}>EMERGENCY</Text>
+          <Text style={styles.emergencyBannerText}>{t('connections.emergency')}</Text>
         </View>
       )}
 
@@ -43,12 +45,12 @@ export default function ConnectionCard({
             {connection.isLocked ? (
               <View style={styles.statusRow}>
                 <View style={[styles.statusDot, styles.statusDotEmergency]} />
-                <Text style={styles.statusTextEmergency}>Needs assistance</Text>
+                <Text style={styles.statusTextEmergency}>{t('connections.needsAssistance')}</Text>
               </View>
             ) : (
               <View style={styles.statusRow}>
                 <View style={styles.statusDot} />
-                <Text style={styles.statusText}>Connected</Text>
+                <Text style={styles.statusText}>{t('connections.connected')}</Text>
               </View>
             )}
           </View>
@@ -67,14 +69,14 @@ export default function ConnectionCard({
         <TouchableOpacity style={styles.primaryButton} onPress={onViewMap} activeOpacity={0.85}>
           <Ionicons name="map" size={17} color="#FFFFFF" />
           <Text style={styles.primaryButtonText} numberOfLines={1}>
-            View on Map
+            {t('connections.viewOnMap')}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton} onPress={onMoreOptions} activeOpacity={0.85}>
           <Ionicons name="ellipsis-horizontal" size={17} color="#6366F1" />
           <Text style={styles.secondaryButtonText} numberOfLines={1}>
-            More Options
+            {t('connections.moreOptions')}
           </Text>
         </TouchableOpacity>
       </View>

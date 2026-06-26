@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 import type { Connection } from '../types';
 
 type SheetStep = 'menu' | 'confirm-lock' | 'confirm-unlock' | 'confirm-remove';
@@ -33,6 +34,7 @@ export default function ConnectionOptionsSheet({
   onUnlock,
   onRemove,
 }: ConnectionOptionsSheetProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<SheetStep>('menu');
 
@@ -46,7 +48,7 @@ export default function ConnectionOptionsSheet({
     return null;
   }
 
-  const displayName = connection.connectedUserName || 'Unknown User';
+  const displayName = connection.connectedUserName || t('common.unknownUser');
   const initial = displayName.charAt(0).toUpperCase();
 
   const handleClose = (): void => {
@@ -79,7 +81,7 @@ export default function ConnectionOptionsSheet({
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{displayName}</Text>
-          <Text style={styles.profileHint}>Manage this connection</Text>
+          <Text style={styles.profileHint}>{t('connections.manageConnection')}</Text>
         </View>
       </View>
 
@@ -94,8 +96,8 @@ export default function ConnectionOptionsSheet({
               <Ionicons name="lock-open-outline" size={20} color="#059669" />
             </View>
             <View style={styles.actionTextWrap}>
-              <Text style={styles.actionTitle}>Unlock Account</Text>
-              <Text style={styles.actionSubtitle}>Restore their app access</Text>
+              <Text style={styles.actionTitle}>{t('connections.unlockAccount')}</Text>
+              <Text style={styles.actionSubtitle}>{t('connections.unlockAccountSubtitle')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
           </TouchableOpacity>
@@ -109,8 +111,8 @@ export default function ConnectionOptionsSheet({
               <Ionicons name="lock-closed-outline" size={20} color="#D97706" />
             </View>
             <View style={styles.actionTextWrap}>
-              <Text style={styles.actionTitle}>Lock Account</Text>
-              <Text style={styles.actionSubtitle}>Restrict their app access</Text>
+              <Text style={styles.actionTitle}>{t('connections.lockAccount')}</Text>
+              <Text style={styles.actionSubtitle}>{t('connections.lockAccountSubtitle')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
           </TouchableOpacity>
@@ -125,15 +127,15 @@ export default function ConnectionOptionsSheet({
             <Ionicons name="person-remove-outline" size={20} color="#DC2626" />
           </View>
           <View style={styles.actionTextWrap}>
-            <Text style={[styles.actionTitle, styles.actionTitleDanger]}>Remove Connection</Text>
-            <Text style={styles.actionSubtitle}>Stop sharing with this person</Text>
+            <Text style={[styles.actionTitle, styles.actionTitleDanger]}>{t('connections.removeConnection')}</Text>
+            <Text style={styles.actionSubtitle}>{t('connections.removeConnectionSubtitle')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.cancelButton} onPress={handleClose} activeOpacity={0.85}>
-        <Text style={styles.cancelButtonText}>Cancel</Text>
+        <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
       </TouchableOpacity>
     </>
   );
@@ -145,9 +147,9 @@ export default function ConnectionOptionsSheet({
             icon: 'lock-closed' as const,
             iconColor: '#D97706',
             iconBg: '#FEF3C7',
-            title: 'Lock account?',
-            message: `This will restrict ${displayName}'s access to the app until you unlock them.`,
-            confirmLabel: 'Lock Account',
+            title: t('connections.lockAccountConfirmTitle'),
+            message: t('connections.lockAccountConfirmMessage', { name: displayName }),
+            confirmLabel: t('connections.lockAccount'),
             confirmStyle: styles.confirmButtonWarning,
           }
         : step === 'confirm-unlock'
@@ -155,18 +157,18 @@ export default function ConnectionOptionsSheet({
               icon: 'lock-open' as const,
               iconColor: '#059669',
               iconBg: '#D1FAE5',
-              title: 'Unlock account?',
-              message: `This will restore ${displayName}'s access to the app.`,
-              confirmLabel: 'Unlock Account',
+              title: t('connections.unlockAccountConfirmTitle'),
+              message: t('connections.unlockAccountConfirmMessage', { name: displayName }),
+              confirmLabel: t('connections.unlockAccount'),
               confirmStyle: styles.confirmButtonSuccess,
             }
           : {
               icon: 'person-remove' as const,
               iconColor: '#DC2626',
               iconBg: '#FEE2E2',
-              title: 'Remove connection?',
-              message: `You will no longer be connected to ${displayName}. They won't see your location or check-ins.`,
-              confirmLabel: 'Remove Connection',
+              title: t('connections.removeConnectionConfirmTitle'),
+              message: t('connections.removeConnectionConfirmMessage', { name: displayName }),
+              confirmLabel: t('connections.removeConnection'),
               confirmStyle: styles.confirmButtonDanger,
             };
 
@@ -174,7 +176,7 @@ export default function ConnectionOptionsSheet({
       <>
         <TouchableOpacity style={styles.backRow} onPress={handleBack} activeOpacity={0.75}>
           <Ionicons name="arrow-back" size={18} color="#6366F1" />
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </TouchableOpacity>
 
         <View style={styles.confirmHero}>
@@ -192,7 +194,7 @@ export default function ConnectionOptionsSheet({
             disabled={submitting}
             activeOpacity={0.85}
           >
-            <Text style={styles.confirmButtonText}>{submitting ? 'Please wait...' : config.confirmLabel}</Text>
+            <Text style={styles.confirmButtonText}>{submitting ? t('common.pleaseWait') : config.confirmLabel}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -201,7 +203,7 @@ export default function ConnectionOptionsSheet({
             disabled={submitting}
             activeOpacity={0.85}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
         </View>
       </>

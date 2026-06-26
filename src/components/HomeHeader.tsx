@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 
 const HEADER_BG = require('../../assets/home/home-header-bg.png');
 const APP_LOGO = require('../../assets/fn.png');
@@ -30,16 +31,7 @@ interface HomeHeaderProps {
   unreadCount: number;
   userName?: string;
   onNotificationsPress: () => void;
-}
-
-function getGreeting(userName?: string): string {
-  const hour = new Date().getHours();
-  let salutation = 'Good evening';
-  if (hour < 12) salutation = 'Good morning';
-  else if (hour < 17) salutation = 'Good afternoon';
-
-  const firstName = userName?.trim().split(/\s+/)[0];
-  return firstName ? `${salutation}, ${firstName}` : salutation;
+  onLanguagePress?: () => void;
 }
 
 export default function HomeHeader({
@@ -49,10 +41,24 @@ export default function HomeHeader({
   unreadCount,
   userName,
   onNotificationsPress,
+  onLanguagePress,
 }: HomeHeaderProps) {
+  const { t } = useTranslation();
+
+  const hour = new Date().getHours();
+  let salutation = t('common.goodEvening');
+  if (hour < 12) salutation = t('common.goodMorning');
+  else if (hour < 17) salutation = t('common.goodAfternoon');
+
+  const firstName = userName?.trim().split(/\s+/)[0];
+  const greeting = firstName
+    ? t('common.greetingWithName', { salutation, name: firstName })
+    : salutation;
+
   const connectionLabel =
-    connectionCount === 1 ? '1 connection' : `${connectionCount} connections`;
-  const greeting = getGreeting(userName);
+    connectionCount === 1
+      ? t('common.oneConnection')
+      : t('common.connectionsCount', { count: connectionCount });
 
   return (
     <ImageBackground
@@ -65,30 +71,37 @@ export default function HomeHeader({
         <View style={styles.topRow}>
           <View style={styles.brandRow}>
             <Image source={APP_LOGO} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.title}>FamGuard</Text>
-            {locationSharingEnabled ? (
-              <View style={styles.activePill}>
-                <View style={styles.activeDot} />
-                <Text style={styles.activeText}>Active</Text>
-              </View>
-            ) : null}
+            <Text style={styles.title}>{t('common.appName')}</Text>
           </View>
 
-          <TouchableOpacity
-            onPress={onNotificationsPress}
-            style={styles.notificationsButton}
-            activeOpacity={0.75}
-            accessibilityLabel="Notifications"
-          >
-            <Ionicons name="notifications-outline" size={20} color={TEXT_DARK} />
-            {unreadCount > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
+          <View style={styles.headerActions}>
+            {onLanguagePress ? (
+              <TouchableOpacity
+                onPress={onLanguagePress}
+                style={styles.headerActionButton}
+                activeOpacity={0.75}
+                accessibilityLabel={t('languageRegion.language')}
+              >
+                <Ionicons name="globe-outline" size={20} color="#10B981" />
+              </TouchableOpacity>
             ) : null}
-          </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onNotificationsPress}
+              style={styles.headerActionButton}
+              activeOpacity={0.75}
+              accessibilityLabel={t('notifications.title')}
+            >
+              <Ionicons name="notifications-outline" size={20} color={TEXT_DARK} />
+              {unreadCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.statusRow}>
@@ -104,7 +117,7 @@ export default function HomeHeader({
                 locationSharingEnabled ? styles.statusTextActive : null,
               ]}
             >
-              {locationSharingEnabled ? 'Visible to connections' : greeting}
+              {locationSharingEnabled ? t('home.visibleToConnections') : greeting}
             </Text>
           </View>
 
@@ -155,30 +168,12 @@ const styles = StyleSheet.create({
     color: TEXT_DARK,
     letterSpacing: -0.4,
   },
-  activePill: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(220, 38, 38, 0.1)',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.18)',
+    gap: 8,
   },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: ACCENT_RED,
-  },
-  activeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: ACCENT_RED,
-    letterSpacing: 0.2,
-  },
-  notificationsButton: {
+  headerActionButton: {
     width: 42,
     height: 42,
     borderRadius: 21,

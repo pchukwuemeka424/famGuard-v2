@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 
 const HEADER_BG = require('../../assets/home/connections-header-bg.png');
 
@@ -19,6 +20,8 @@ export default function ConnectionsHeader({
   onBackPress,
   onAddPress,
 }: ConnectionsHeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <Image source={HEADER_BG} style={styles.backgroundImage} resizeMode="cover" />
@@ -30,7 +33,7 @@ export default function ConnectionsHeader({
               onPress={onBackPress}
               style={styles.iconButton}
               activeOpacity={0.75}
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.back')}
             >
               <Ionicons name="arrow-back" size={20} color="#1E293B" />
             </TouchableOpacity>
@@ -42,14 +45,14 @@ export default function ConnectionsHeader({
             onPress={onAddPress}
             style={styles.addButton}
             activeOpacity={0.75}
-            accessibilityLabel="Add connection"
+            accessibilityLabel={t('connections.alertAddConnectionTitle')}
           >
             <Ionicons name="person-add-outline" size={20} color="#6366F1" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.textBlock}>
-          <Text style={styles.title}>Connections</Text>
+          <Text style={styles.title}>{t('connections.title')}</Text>
           <Text style={styles.subtitle}>{connectionCountLabel}</Text>
         </View>
       </View>

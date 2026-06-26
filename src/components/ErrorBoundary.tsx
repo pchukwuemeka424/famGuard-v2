@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 import { logger } from '../utils/logger';
 
 interface Props {
@@ -13,6 +14,48 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+}
+
+interface ErrorFallbackProps {
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  onReset: () => void;
+}
+
+function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps): ReactNode {
+  const { t } = useTranslation();
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.iconContainer}>
+          <Ionicons name="alert-circle" size={64} color="#FF3B30" />
+        </View>
+
+        <Text style={styles.title}>{t('errorBoundary.title')}</Text>
+        <Text style={styles.message}>{t('errorBoundary.message')}</Text>
+
+        {__DEV__ && error && (
+          <View style={styles.errorDetails}>
+            <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
+            <Text style={styles.errorText}>{error.toString()}</Text>
+            {errorInfo && (
+              <Text style={styles.errorText}>{errorInfo.componentStack}</Text>
+            )}
+          </View>
+        )}
+
+        <TouchableOpacity style={styles.button} onPress={onReset}>
+          <Ionicons name="refresh" size={20} color="#FFFFFF" />
+          <Text style={styles.buttonText}>{t('errorBoundary.tryAgain')}</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -61,44 +104,11 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-          <ScrollView 
-            style={styles.scrollView}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons name="alert-circle" size={64} color="#FF3B30" />
-            </View>
-            
-            <Text style={styles.title}>Something went wrong</Text>
-            <Text style={styles.message}>
-              We're sorry, but something unexpected happened. Please try again.
-            </Text>
-
-            {__DEV__ && this.state.error && (
-              <View style={styles.errorDetails}>
-                <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
-                <Text style={styles.errorText}>
-                  {this.state.error.toString()}
-                </Text>
-                {this.state.errorInfo && (
-                  <Text style={styles.errorText}>
-                    {this.state.errorInfo.componentStack}
-                  </Text>
-                )}
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={styles.button}
-              onPress={this.handleReset}
-            >
-              <Ionicons name="refresh" size={20} color="#FFFFFF" />
-              <Text style={styles.buttonText}>Try Again</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </SafeAreaView>
+        <ErrorFallback
+          error={this.state.error}
+          errorInfo={this.state.errorInfo}
+          onReset={this.handleReset}
+        />
       );
     }
 

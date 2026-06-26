@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 
 const HEADER_BG = require('../../assets/home/profile-header-bg.png');
 
@@ -13,6 +14,8 @@ export default function EditProfileHeader({
   paddingTop,
   onBackPress,
 }: EditProfileHeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <Image source={HEADER_BG} style={styles.backgroundImage} resizeMode="cover" />
@@ -23,7 +26,7 @@ export default function EditProfileHeader({
             onPress={onBackPress}
             style={styles.iconButton}
             activeOpacity={0.75}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.back')}
           >
             <Ionicons name="arrow-back" size={20} color="#1E293B" />
           </TouchableOpacity>
@@ -32,8 +35,8 @@ export default function EditProfileHeader({
         </View>
 
         <View style={styles.textBlock}>
-          <Text style={styles.title}>Edit Profile</Text>
-          <Text style={styles.subtitle}>Update your personal details</Text>
+          <Text style={styles.title}>{t('editProfile.title')}</Text>
+          <Text style={styles.subtitle}>{t('editProfile.subtitle')}</Text>
         </View>
       </View>
     </View>

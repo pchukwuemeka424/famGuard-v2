@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 type TermsOfServiceScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TermsOfService'>;
 
@@ -18,13 +19,15 @@ interface TermsOfServiceScreenProps {
 }
 
 export default function TermsOfServiceScreen({ navigation }: TermsOfServiceScreenProps) {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Terms of Service</Text>
+        <Text style={styles.headerTitle}>{t('termsOfService.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -33,69 +36,46 @@ export default function TermsOfServiceScreen({ navigation }: TermsOfServiceScree
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>Last Updated: January 2025</Text>
+        <Text style={styles.sectionTitle}>{t('termsOfService.lastUpdated')}</Text>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>1. Acceptance of Terms</Text>
-          <Text style={styles.text}>
-            By accessing and using FamGuard, you accept and agree to be bound by the terms and 
-            provision of this agreement.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section1Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section1Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>2. Use License</Text>
-          <Text style={styles.text}>
-            Permission is granted to temporarily use FamGuard for personal, non-commercial use only. 
-            This is the grant of a license, not a transfer of title.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section2Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section2Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>3. User Responsibilities</Text>
-          <Text style={styles.text}>
-            You are responsible for maintaining the confidentiality of your account and password. 
-            You agree to use the service only for lawful purposes and in accordance with these terms.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section3Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section3Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>4. Location Sharing</Text>
-          <Text style={styles.text}>
-            By using location sharing features, you consent to sharing your location with your 
-            connections. You can disable location sharing at any time in settings.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section4Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section4Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>5. Prohibited Uses</Text>
-          <Text style={styles.text}>
-            You may not use FamGuard to harass, abuse, or harm others, or to violate any laws. 
-            False incident reports are strictly prohibited.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section5Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section5Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>6. Limitation of Liability</Text>
-          <Text style={styles.text}>
-            FamGuard is provided "as is" without warranties. We are not liable for any damages 
-            arising from your use of the service.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section6Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section6Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>7. Changes to Terms</Text>
-          <Text style={styles.text}>
-            We reserve the right to modify these terms at any time. Continued use of the service 
-            after changes constitutes acceptance of the new terms.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section7Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section7Text')}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>8. Contact Information</Text>
-          <Text style={styles.text}>
-            For questions about these Terms of Service, please contact us at info@acehubtechnologiesltd.co.uk
-          </Text>
+          <Text style={styles.sectionTitle}>{t('termsOfService.section8Title')}</Text>
+          <Text style={styles.text}>{t('termsOfService.section8Text')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

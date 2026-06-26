@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 import type { FamilyMember, UserCheckIn } from '../types';
 
 interface CheckInConnectionPickerProps {
@@ -23,32 +24,23 @@ interface CheckInConnectionPickerProps {
   onConfirm: (selectedUserIds: string[]) => void;
 }
 
-const STATUS_CONFIG: Record<
+const STATUS_VISUALS: Record<
   'safe' | 'delayed',
   {
-    title: string;
-    subtitle: string;
     gradient: [string, string];
     icon: keyof typeof Ionicons.glyphMap;
     iconColor: string;
-    confirmLabel: string;
   }
 > = {
   safe: {
-    title: "I'm Safe",
-    subtitle: 'Choose who should receive your safety update',
     gradient: ['#10B981', '#059669'],
     icon: 'checkmark-circle',
     iconColor: '#10B981',
-    confirmLabel: 'Send Safe Check-in',
   },
   delayed: {
-    title: 'Delayed',
-    subtitle: 'Choose who should know you will check in later',
     gradient: ['#F59E0B', '#D97706'],
     icon: 'time',
     iconColor: '#F59E0B',
-    confirmLabel: 'Send Delayed Update',
   },
 };
 
@@ -60,8 +52,26 @@ export default function CheckInConnectionPicker({
   onClose,
   onConfirm,
 }: CheckInConnectionPickerProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const config = STATUS_CONFIG[status === 'delayed' ? 'delayed' : 'safe'];
+  const statusKey = status === 'delayed' ? 'delayed' : 'safe';
+  const config = useMemo(() => {
+    const visuals = STATUS_VISUALS[statusKey];
+    if (statusKey === 'delayed') {
+      return {
+        title: t('checkInPicker.delayedTitle'),
+        subtitle: t('checkInPicker.delayedSubtitle'),
+        confirmLabel: t('checkInPicker.sendDelayedUpdate'),
+        ...visuals,
+      };
+    }
+    return {
+      title: t('checkInPicker.safeTitle'),
+      subtitle: t('checkInPicker.safeSubtitle'),
+      confirmLabel: t('checkInPicker.sendSafeCheckIn'),
+      ...visuals,
+    };
+  }, [statusKey, t]);
   const selectableConnections = useMemo(
     () => connections.filter((connection) => connection.userId),
     [connections]
@@ -120,7 +130,7 @@ export default function CheckInConnectionPicker({
             onPress={onClose}
             style={styles.closeButton}
             activeOpacity={0.75}
-            accessibilityLabel="Close"
+            accessibilityLabel={t('common.cancel')}
           >
             <Ionicons name="close" size={22} color="#475569" />
           </TouchableOpacity>
@@ -138,15 +148,18 @@ export default function CheckInConnectionPicker({
 
         <View style={styles.toolbar}>
           <Text style={styles.toolbarLabel}>
-            {selectedIds.size} of {selectableConnections.length} selected
+            {t('checkInPicker.selectedCount', {
+              selected: selectedIds.size,
+              total: selectableConnections.length,
+            })}
           </Text>
           <View style={styles.toolbarActions}>
             <TouchableOpacity onPress={selectAll} activeOpacity={0.7}>
-              <Text style={styles.toolbarAction}>Select all</Text>
+              <Text style={styles.toolbarAction}>{t('checkInPicker.selectAll')}</Text>
             </TouchableOpacity>
             <Text style={styles.toolbarDivider}>·</Text>
             <TouchableOpacity onPress={clearAll} activeOpacity={0.7}>
-              <Text style={styles.toolbarAction}>Clear</Text>
+              <Text style={styles.toolbarAction}>{t('checkInPicker.clear')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -159,9 +172,9 @@ export default function CheckInConnectionPicker({
             {selectableConnections.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="people-outline" size={40} color="#94A3B8" />
-                <Text style={styles.emptyTitle}>No connections yet</Text>
+                <Text style={styles.emptyTitle}>{t('checkInPicker.noConnectionsTitle')}</Text>
                 <Text style={styles.emptySubtitle}>
-                  Add connections first so you can notify them when you check in.
+                  {t('checkInPicker.noConnectionsSubtitle')}
                 </Text>
               </View>
             ) : (
@@ -187,7 +200,7 @@ export default function CheckInConnectionPicker({
                     <View style={styles.connectionInfo}>
                       <Text style={styles.connectionName}>{connection.name}</Text>
                       <Text style={styles.connectionMeta}>
-                        {connection.relationship || 'Connection'}
+                        {connection.relationship || t('common.connection')}
                       </Text>
                     </View>
 
@@ -202,7 +215,7 @@ export default function CheckInConnectionPicker({
 
         <View style={styles.footer}>
           <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

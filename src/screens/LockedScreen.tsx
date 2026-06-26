@@ -9,7 +9,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { locationService } from '../services/locationService';
 import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../types';
 
@@ -20,6 +22,7 @@ interface LockedScreenProps {
 }
 
 export default function LockedScreen({ navigation }: LockedScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [checkingStatus, setCheckingStatus] = useState(true);
 
@@ -36,7 +39,8 @@ export default function LockedScreen({ navigation }: LockedScreenProps) {
           .single();
 
         if (!error && data && !data.is_locked) {
-          // User has been unlocked, navigate back to home
+          // User has been unlocked — stop emergency tracking and return home
+          await locationService.stopAllEmergencyTracking();
           navigation.reset({
             index: 0,
             routes: [{ name: 'MainTabs' }],
@@ -48,6 +52,13 @@ export default function LockedScreen({ navigation }: LockedScreenProps) {
         setCheckingStatus(false);
       }
     };
+
+    // Resume background tracking if the app restarted while still locked
+    if (user?.id) {
+      locationService.resumeEmergencyTrackingIfLocked(user.id).catch((error) => {
+        console.error('Error resuming emergency tracking on locked screen:', error);
+      });
+    }
 
     // Check immediately
     checkLockStatus();
@@ -73,30 +84,26 @@ export default function LockedScreen({ navigation }: LockedScreenProps) {
 
           {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.title}>App Locked</Text>
+            <Text style={styles.title}>{t('locked.title')}</Text>
             <View style={styles.badgeContainer}>
               <View style={styles.lockBadge}>
                 <Ionicons name="lock-closed" size={16} color="#FFFFFF" />
-                <Text style={styles.badgeText}>SECURED</Text>
+                <Text style={styles.badgeText}>{t('locked.secured')}</Text>
               </View>
             </View>
           </View>
 
           {/* Simple Message */}
           <View style={styles.messageContainer}>
-            <Text style={styles.messageText}>
-              Access to the app is temporarily restricted.
-            </Text>
-            <Text style={styles.messageText}>
-              Please contact one of your trusted connections to unlock your account.
-            </Text>
+            <Text style={styles.messageText}>{t('locked.message1')}</Text>
+            <Text style={styles.messageText}>{t('locked.message2')}</Text>
           </View>
 
           {/* Status Indicator */}
           {checkingStatus && (
             <View style={styles.statusContainer}>
               <ActivityIndicator size="small" color="#DC2626" />
-              <Text style={styles.statusText}>Checking lock status...</Text>
+              <Text style={styles.statusText}>{t('locked.checkingStatus')}</Text>
             </View>
           )}
       </View>

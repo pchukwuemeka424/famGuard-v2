@@ -4,7 +4,7 @@ import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
-import { LOCATION_TASK_NAME } from '../tasks/locationBackgroundTask';
+import { LOCATION_TASK_NAME, EMERGENCY_TRACKING_ACTIVE_KEY } from '../tasks/locationBackgroundTask';
 import type { Location as LocationType } from '../types';
 
 interface LocationServiceConfig {
@@ -30,6 +30,10 @@ class LocationService {
   // SOS location tracking (inserts a new row every hour — never updates existing rows)
   private sosLocationTrackingInterval: NodeJS.Timeout | null = null;
   private isSosLocationTracking: boolean = false;
+  // Native background location tracking during emergency (survives app background/kill)
+  private emergencyBackgroundWatchSubscription: Location.LocationSubscription | null = null;
+  private isEmergencyBackgroundTracking: boolean = false;
+  private readonly EMERGENCY_LOCATION_CHECK_INTERVAL = 15000; // 15 seconds
   private config: LocationServiceConfig = {
     accuracy: Location.Accuracy.Highest, // Use highest accuracy for exact location
     updateInterval: 1800000, // 30 minutes (1800000 ms) for location updates - works in foreground and background
@@ -2546,9 +2550,9 @@ class LocationService {
           console.error('Error checking user lock status:', userError);
           // Continue tracking if we can't check status
         } else if (userData && !userData.is_locked) {
-          // User is unlocked - stop tracking
-          console.log('User unlocked - stopping emergency high-accuracy tracking');
-          this.stopEmergencyHighAccuracyTracking();
+          // User is unlocked - stop all emergency tracking
+          console.log('User unlocked - stopping emergency tracking');
+          await this.stopAllEmergencyTracking();
           return;
         }
 
@@ -2633,6 +2637,229 @@ class LocationService {
    */
   isEmergencyHighAccuracyTrackingActive(): boolean {
     return this.isEmergencyHighAccuracyTracking;
+  }
+
+  /**
+   * Start all emergency tracking: native background task + foreground intervals.
+   * Keeps the device tracked when the app is backgrounded or the screen is locked.
+   */
+  async startEmergencyTracking(userId: string): Promise<void> {
+    await this.startEmergencyBackgroundTracking(userId);
+    await Promise.allSettled([
+      this.startEmergencyHighAccuracyTracking(userId),
+      this.startSOSLocationTracking(userId),
+      this.startEmergencyLocationTracking(userId),
+    ]);
+  }
+
+  /**
+   * Resume emergency tracking if the user is still locked (e.g. after app restart).
+   */
+  async resumeEmergencyTrackingIfLocked(userId: string): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('is_locked')
+        .eq('id', userId)
+        .single();
+
+      if (error || !data?.is_locked) {
+        return;
+      }
+
+      if (!this.isEmergencyBackgroundTracking) {
+        await this.startEmergencyTracking(userId);
+        console.log('Resumed emergency tracking for locked user');
+      }
+    } catch (error) {
+      console.error('Error resuming emergency tracking:', error);
+    }
+  }
+
+  /**
+   * Start native background location updates for emergency mode.
+   * Uses a foreground service on Android and background location on iOS.
+   */
+  async startEmergencyBackgroundTracking(userId: string): Promise<void> {
+    if (this.isEmergencyBackgroundTracking) {
+      console.log('Emergency background tracking already active');
+      return;
+    }
+
+    const permissionResult = await this.requestPermissions();
+    if (!permissionResult.granted) {
+      throw new Error(permissionResult.message || 'Location permissions not granted');
+    }
+
+    // Background permission is required for tracking when the app is not in the foreground
+    if (Platform.OS === 'android') {
+      try {
+        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+        if (backgroundStatus !== 'granted') {
+          console.warn('Background location permission denied - emergency tracking may stop when app is closed');
+        }
+      } catch (bgError) {
+        console.warn('Background permission request failed:', bgError);
+      }
+    } else {
+      try {
+        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+        if (backgroundStatus !== 'granted') {
+          console.warn('iOS background location permission denied - emergency tracking may be limited');
+        }
+      } catch (bgError) {
+        console.warn('iOS background permission request failed:', bgError);
+      }
+    }
+
+    this.userId = userId;
+    this.isEmergencyBackgroundTracking = true;
+
+    await AsyncStorage.setItem('location_tracking_userId', userId);
+    await AsyncStorage.setItem('location_tracking_shareLocation', 'true');
+    await AsyncStorage.setItem(EMERGENCY_TRACKING_ACTIVE_KEY, 'true');
+
+    // Optional: store family group if the user belongs to one
+    try {
+      const { data: member } = await supabase
+        .from('family_members')
+        .select('family_group_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (member?.family_group_id) {
+        await AsyncStorage.setItem('location_tracking_familyGroupId', member.family_group_id);
+        this.familyGroupId = member.family_group_id;
+      }
+    } catch (error) {
+      console.warn('Could not load family group for emergency tracking:', error);
+    }
+
+    // Start native background location updates (works on Android and iOS)
+    try {
+      const hasStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+      if (!hasStarted) {
+        const started = await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+          accuracy: Location.Accuracy.Highest,
+          timeInterval: this.EMERGENCY_LOCATION_CHECK_INTERVAL,
+          distanceInterval: 10,
+          foregroundService: {
+            notificationTitle: 'Emergency Tracking Active',
+            notificationBody: 'FamGuard is tracking your location and sharing it with your connections.',
+            notificationColor: '#DC2626',
+          },
+          pausesUpdatesAutomatically: false,
+          showsBackgroundLocationIndicator: true,
+          activityType: Location.ActivityType.OtherNavigation,
+        });
+
+        if (started) {
+          console.log('Emergency background location updates started');
+        }
+      } else {
+        console.log('Background location updates already running for emergency');
+      }
+    } catch (bgError) {
+      console.error('Failed to start emergency background location updates:', bgError);
+    }
+
+    // Watch position for more frequent updates while JS runtime is active
+    try {
+      if (this.emergencyBackgroundWatchSubscription) {
+        this.emergencyBackgroundWatchSubscription.remove();
+        this.emergencyBackgroundWatchSubscription = null;
+      }
+
+      this.emergencyBackgroundWatchSubscription = await Location.watchPositionAsync(
+        {
+          accuracy: Platform.OS === 'ios'
+            ? Location.Accuracy.BestForNavigation
+            : Location.Accuracy.Highest,
+          timeInterval: this.EMERGENCY_LOCATION_CHECK_INTERVAL,
+          distanceInterval: 10,
+        },
+        async (location) => {
+          if (!this.isValidCoordinate(location.coords.latitude, location.coords.longitude)) {
+            return;
+          }
+
+          const newLocation: LocationType = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          };
+
+          this.lastLocation = newLocation;
+
+          // Update connections table so connections see live location during emergency
+          try {
+            await supabase
+              .from('connections')
+              .update({
+                location_latitude: newLocation.latitude,
+                location_longitude: newLocation.longitude,
+                location_updated_at: new Date().toISOString(),
+              })
+              .eq('connected_user_id', userId)
+              .eq('status', 'connected');
+          } catch (error) {
+            console.warn('Error updating connection location during emergency watch:', error);
+          }
+        }
+      );
+      console.log('Emergency location watch started');
+    } catch (watchError) {
+      console.error('Failed to start emergency location watch:', watchError);
+    }
+  }
+
+  /**
+   * Stop native background emergency location tracking.
+   */
+  async stopEmergencyBackgroundTracking(): Promise<void> {
+    if (this.emergencyBackgroundWatchSubscription) {
+      this.emergencyBackgroundWatchSubscription.remove();
+      this.emergencyBackgroundWatchSubscription = null;
+    }
+
+    this.isEmergencyBackgroundTracking = false;
+    await AsyncStorage.removeItem(EMERGENCY_TRACKING_ACTIVE_KEY);
+
+    // Only stop native background updates if regular location sharing is not active
+    if (!this.isTracking) {
+      try {
+        const hasStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+        if (hasStarted) {
+          await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+          console.log('Emergency background location updates stopped');
+        }
+      } catch (bgError) {
+        console.error('Error stopping emergency background location updates:', bgError);
+      }
+
+      await AsyncStorage.multiRemove([
+        'location_tracking_userId',
+        'location_tracking_familyGroupId',
+        'location_tracking_shareLocation',
+      ]);
+    } else {
+      await AsyncStorage.setItem('location_tracking_shareLocation', 'true');
+    }
+  }
+
+  /**
+   * Stop all emergency tracking (foreground intervals + native background).
+   */
+  async stopAllEmergencyTracking(): Promise<void> {
+    this.stopEmergencyLocationTracking();
+    this.stopEmergencyHighAccuracyTracking();
+    this.stopSOSLocationTracking();
+    await this.stopEmergencyBackgroundTracking();
+  }
+
+  isEmergencyBackgroundTrackingActive(): boolean {
+    return this.isEmergencyBackgroundTracking;
   }
 }
 

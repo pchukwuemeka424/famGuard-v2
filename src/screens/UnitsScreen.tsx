@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 type UnitsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Units'>;
@@ -24,6 +25,7 @@ interface UnitsScreenProps {
 type UnitSystem = 'metric' | 'imperial';
 
 export default function UnitsScreen({ navigation }: UnitsScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
   const [loading, setLoading] = useState<boolean>(true);
@@ -146,12 +148,12 @@ export default function UnitsScreen({ navigation }: UnitsScreenProps) {
 
       if (error) {
         console.error('Error saving unit system:', error);
-        Alert.alert('Error', 'Failed to save unit system setting. Please try again.');
+        Alert.alert(t('common.error'), t('units.alertSaveFailed'));
         await loadUnitSystem();
       }
     } catch (error) {
       console.error('Error saving unit system:', error);
-      Alert.alert('Error', 'Failed to save unit system setting. Please try again.');
+      Alert.alert(t('common.error'), t('units.alertSaveFailed'));
       await loadUnitSystem();
     } finally {
       setSaving(false);
@@ -164,19 +166,17 @@ export default function UnitsScreen({ navigation }: UnitsScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Units</Text>
+        <Text style={styles.headerTitle}>{t('units.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.description}>
-          Choose your preferred unit system for distances and measurements.
-        </Text>
+        <Text style={styles.description}>{t('units.description')}</Text>
 
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading settings...</Text>
+            <Text style={styles.loadingText}>{t('common.loadingSettings')}</Text>
           </View>
         ) : (
           <>
@@ -197,8 +197,8 @@ export default function UnitsScreen({ navigation }: UnitsScreenProps) {
                   />
                 )}
                 <View style={styles.optionText}>
-                  <Text style={styles.optionTitle}>Metric (km, m)</Text>
-                  <Text style={styles.optionSubtitle}>Kilometers and meters</Text>
+                  <Text style={styles.optionTitle}>{t('units.metric')}</Text>
+                  <Text style={styles.optionSubtitle}>{t('units.metricSubtitle')}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -220,8 +220,8 @@ export default function UnitsScreen({ navigation }: UnitsScreenProps) {
                   />
                 )}
                 <View style={styles.optionText}>
-                  <Text style={styles.optionTitle}>Imperial (miles, feet)</Text>
-                  <Text style={styles.optionSubtitle}>Miles and feet</Text>
+                  <Text style={styles.optionTitle}>{t('units.imperial')}</Text>
+                  <Text style={styles.optionSubtitle}>{t('units.imperialSubtitle')}</Text>
                 </View>
               </View>
             </TouchableOpacity>

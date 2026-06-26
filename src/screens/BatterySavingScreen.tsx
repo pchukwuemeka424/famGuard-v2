@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 type BatterySavingScreenNavigationProp = StackNavigationProp<RootStackParamList, 'BatterySaving'>;
@@ -23,6 +24,7 @@ interface BatterySavingScreenProps {
 }
 
 export default function BatterySavingScreen({ navigation }: BatterySavingScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(false);
   const [reduceLocationUpdates, setReduceLocationUpdates] = useState(false);
@@ -155,12 +157,12 @@ export default function BatterySavingScreen({ navigation }: BatterySavingScreenP
 
       if (error) {
         console.error('Error saving battery saving settings:', error);
-        Alert.alert('Error', 'Failed to save battery saving settings. Please try again.');
+        Alert.alert(t('common.error'), t('batterySaving.alertSaveFailed'));
         await loadBatterySavingSettings();
       }
     } catch (error) {
       console.error('Error saving battery saving settings:', error);
-      Alert.alert('Error', 'Failed to save battery saving settings. Please try again.');
+      Alert.alert(t('common.error'), t('batterySaving.alertSaveFailed'));
       await loadBatterySavingSettings();
     } finally {
       setSaving(false);
@@ -173,27 +175,25 @@ export default function BatterySavingScreen({ navigation }: BatterySavingScreenP
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Battery Saving Mode</Text>
+        <Text style={styles.headerTitle}>{t('batterySaving.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.description}>
-          Optimize app performance to conserve battery life. Some features may be limited.
-        </Text>
+        <Text style={styles.description}>{t('batterySaving.description')}</Text>
 
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading settings...</Text>
+            <Text style={styles.loadingText}>{t('common.loadingSettings')}</Text>
           </View>
         ) : (
           <>
             <View style={styles.section}>
               <View style={styles.settingRow}>
                 <View style={styles.settingContent}>
-                  <Text style={styles.settingTitle}>Enable Battery Saving</Text>
-                  <Text style={styles.settingSubtitle}>Reduce background activity</Text>
+                  <Text style={styles.settingTitle}>{t('batterySaving.enableBatterySaving')}</Text>
+                  <Text style={styles.settingSubtitle}>{t('batterySaving.enableBatterySavingSubtitle')}</Text>
                 </View>
                 {saving ? (
                   <ActivityIndicator size="small" color="#007AFF" />
@@ -214,8 +214,8 @@ export default function BatterySavingScreen({ navigation }: BatterySavingScreenP
                 <View style={styles.section}>
                   <View style={styles.settingRow}>
                     <View style={styles.settingContent}>
-                      <Text style={styles.settingTitle}>Reduce Location Updates</Text>
-                      <Text style={styles.settingSubtitle}>Update location less frequently</Text>
+                      <Text style={styles.settingTitle}>{t('batterySaving.reduceLocationUpdates')}</Text>
+                      <Text style={styles.settingSubtitle}>{t('batterySaving.reduceLocationUpdatesSubtitle')}</Text>
                     </View>
                     {saving ? (
                       <ActivityIndicator size="small" color="#007AFF" />
@@ -234,8 +234,8 @@ export default function BatterySavingScreen({ navigation }: BatterySavingScreenP
                 <View style={styles.section}>
                   <View style={styles.settingRow}>
                     <View style={styles.settingContent}>
-                      <Text style={styles.settingTitle}>Reduce Background Sync</Text>
-                      <Text style={styles.settingSubtitle}>Sync data less frequently</Text>
+                      <Text style={styles.settingTitle}>{t('batterySaving.reduceBackgroundSync')}</Text>
+                      <Text style={styles.settingSubtitle}>{t('batterySaving.reduceBackgroundSyncSubtitle')}</Text>
                     </View>
                     {saving ? (
                       <ActivityIndicator size="small" color="#007AFF" />

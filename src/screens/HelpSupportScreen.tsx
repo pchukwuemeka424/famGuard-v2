@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 type HelpSupportScreenNavigationProp = StackNavigationProp<RootStackParamList, 'HelpSupport'>;
 
@@ -71,31 +72,32 @@ const faqData: FAQItem[] = [
 const helpItems = [
   {
     id: 'faq',
-    title: 'Frequently Asked Questions',
+    titleKey: 'helpSupport.faqTitle',
     icon: 'help-circle-outline',
-    description: 'Common questions and answers',
+    descriptionKey: 'helpSupport.faqDescription',
   },
   {
     id: 'contact',
-    title: 'Contact Support',
+    titleKey: 'helpSupport.contactSupport',
     icon: 'mail-outline',
-    description: 'Get help from our support team',
+    descriptionKey: 'helpSupport.contactSupportDescription',
   },
   {
     id: 'tutorial',
-    title: 'App Tutorial',
+    titleKey: 'helpSupport.appTutorial',
     icon: 'play-circle-outline',
-    description: 'Learn how to use the app',
+    descriptionKey: 'helpSupport.appTutorialDescription',
   },
   {
     id: 'report',
-    title: 'Report a Problem',
+    titleKey: 'helpSupport.reportProblem',
     icon: 'bug-outline',
-    description: 'Report bugs or issues',
+    descriptionKey: 'helpSupport.reportProblemDescription',
   },
 ];
 
 export default function HelpSupportScreen({ navigation }: HelpSupportScreenProps) {
+  const { t } = useTranslation();
   const [showFAQ, setShowFAQ] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
@@ -126,14 +128,12 @@ export default function HelpSupportScreen({ navigation }: HelpSupportScreenProps
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Support</Text>
+        <Text style={styles.headerTitle}>{t('helpSupport.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.description}>
-          Need help? Find answers to common questions or contact our support team.
-        </Text>
+        <Text style={styles.description}>{t('helpSupport.description')}</Text>
 
         {helpItems.map((item) => (
           <TouchableOpacity
@@ -143,8 +143,8 @@ export default function HelpSupportScreen({ navigation }: HelpSupportScreenProps
           >
             <Ionicons name={item.icon as any} size={24} color="#007AFF" />
             <View style={styles.helpItemContent}>
-              <Text style={styles.helpItemTitle}>{item.title}</Text>
-              <Text style={styles.helpItemDescription}>{item.description}</Text>
+              <Text style={styles.helpItemTitle}>{t(item.titleKey)}</Text>
+              <Text style={styles.helpItemDescription}>{t(item.descriptionKey)}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
           </TouchableOpacity>
@@ -169,7 +169,7 @@ export default function HelpSupportScreen({ navigation }: HelpSupportScreenProps
             >
               <Ionicons name="arrow-back" size={24} color="#000000" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Frequently Asked Questions</Text>
+            <Text style={styles.modalTitle}>{t('helpSupport.faqTitle')}</Text>
             <View style={styles.placeholder} />
           </View>
 

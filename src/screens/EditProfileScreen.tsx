@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import EditProfileHeader from '../components/EditProfileHeader';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import type { RootStackParamList } from '../types';
 
 type EditProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'EditProfile'>;
@@ -38,6 +39,7 @@ const getInitials = (value: string): string => {
 };
 
 export default function EditProfileScreen({ navigation }: EditProfileScreenProps) {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState(user?.name || '');
@@ -50,7 +52,7 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
 
   const handleSave = async (): Promise<void> => {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Please enter your name before saving.');
+      Alert.alert(t('common.error'), t('editProfile.alertNameRequired'));
       return;
     }
 
@@ -62,12 +64,12 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
     setLoading(true);
     try {
       await updateUser({ name: name.trim() });
-      Alert.alert('Profile updated', 'Your changes have been saved.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
+      Alert.alert(t('common.success'), t('editProfile.alertProfileUpdated'), [
+        { text: t('common.ok'), onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert(t('common.error'), t('editProfile.alertUpdateFailed'));
     } finally {
       setLoading(false);
     }
@@ -99,15 +101,15 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
                 <Text style={styles.avatarInitials}>{initials}</Text>
               </View>
             )}
-            <Text style={styles.avatarName}>{name.trim() || 'Your name'}</Text>
-            <Text style={styles.avatarHint}>Only your name can be edited here</Text>
+            <Text style={styles.avatarName}>{name.trim() || t('editProfile.yourName')}</Text>
+            <Text style={styles.avatarHint}>{t('editProfile.avatarHint')}</Text>
           </View>
 
           <View style={styles.formCard}>
-            <Text style={styles.sectionLabel}>Personal details</Text>
+            <Text style={styles.sectionLabel}>{t('editProfile.personalDetails')}</Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Full name</Text>
+              <Text style={styles.fieldLabel}>{t('editProfile.fullName')}</Text>
               <View style={styles.inputRow}>
                 <View style={[styles.inputIconWrap, styles.inputIconWrapEditable]}>
                   <Ionicons name="person-outline" size={18} color={ACCENT} />
@@ -116,7 +118,7 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
                   style={styles.input}
                   value={name}
                   onChangeText={setName}
-                  placeholder="Enter your name"
+                  placeholder={t('editProfile.namePlaceholder')}
                   placeholderTextColor="#94A3B8"
                   autoCapitalize="words"
                   autoCorrect={false}
@@ -129,17 +131,17 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
 
             <View style={styles.fieldGroup}>
               <View style={styles.readonlyLabelRow}>
-                <Text style={styles.fieldLabel}>Email</Text>
+                <Text style={styles.fieldLabel}>{t('editProfile.email')}</Text>
                 <View style={styles.lockedBadge}>
                   <Ionicons name="lock-closed" size={10} color="#64748B" />
-                  <Text style={styles.lockedBadgeText}>Locked</Text>
+                  <Text style={styles.lockedBadgeText}>{t('common.locked')}</Text>
                 </View>
               </View>
               <View style={[styles.inputRow, styles.inputRowReadonly]}>
                 <View style={styles.inputIconWrap}>
                   <Ionicons name="mail-outline" size={18} color="#64748B" />
                 </View>
-                <Text style={styles.readonlyValue}>{email || 'Not set'}</Text>
+                <Text style={styles.readonlyValue}>{email || t('common.notSet')}</Text>
               </View>
             </View>
 
@@ -147,17 +149,17 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
 
             <View style={styles.fieldGroup}>
               <View style={styles.readonlyLabelRow}>
-                <Text style={styles.fieldLabel}>Phone</Text>
+                <Text style={styles.fieldLabel}>{t('editProfile.phone')}</Text>
                 <View style={styles.lockedBadge}>
                   <Ionicons name="lock-closed" size={10} color="#64748B" />
-                  <Text style={styles.lockedBadgeText}>Locked</Text>
+                  <Text style={styles.lockedBadgeText}>{t('common.locked')}</Text>
                 </View>
               </View>
               <View style={[styles.inputRow, styles.inputRowReadonly]}>
                 <View style={styles.inputIconWrap}>
                   <Ionicons name="call-outline" size={18} color="#64748B" />
                 </View>
-                <Text style={styles.readonlyValue}>{phone || 'Not set'}</Text>
+                <Text style={styles.readonlyValue}>{phone || t('common.notSet')}</Text>
               </View>
             </View>
           </View>
@@ -166,10 +168,7 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
             <View style={styles.infoIconWrap}>
               <Ionicons name="information-circle-outline" size={20} color={ACCENT} />
             </View>
-            <Text style={styles.infoText}>
-              Email and phone are tied to your account login and cannot be changed here. Contact
-              support if you need to update them.
-            </Text>
+            <Text style={styles.infoText}>{t('editProfile.infoText')}</Text>
           </View>
         </ScrollView>
 
@@ -186,7 +185,7 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
                 <Text style={styles.saveButtonText}>
-                  {hasChanges ? 'Save changes' : 'Done'}
+                  {hasChanges ? t('editProfile.saveChanges') : t('common.done')}
                 </Text>
               </>
             )}

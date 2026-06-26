@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 type LocationAccuracyScreenNavigationProp = StackNavigationProp<RootStackParamList, 'LocationAccuracy'>;
@@ -24,6 +25,7 @@ interface LocationAccuracyScreenProps {
 type AccuracyMode = 'exact' | 'approximate';
 
 export default function LocationAccuracyScreen({ navigation }: LocationAccuracyScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [accuracyMode, setAccuracyMode] = useState<AccuracyMode>('exact');
   const [loading, setLoading] = useState<boolean>(true);
@@ -172,12 +174,12 @@ export default function LocationAccuracyScreen({ navigation }: LocationAccuracyS
 
       if (error) {
         console.error('Error saving accuracy mode:', error);
-        Alert.alert('Error', 'Failed to save location accuracy setting. Please try again.');
+        Alert.alert(t('common.error'), t('locationAccuracy.alertSaveFailed'));
         await loadAccuracyMode();
       }
     } catch (error) {
       console.error('Error saving accuracy mode:', error);
-      Alert.alert('Error', 'Failed to save location accuracy setting. Please try again.');
+      Alert.alert(t('common.error'), t('locationAccuracy.alertSaveFailed'));
       await loadAccuracyMode();
     } finally {
       setSaving(false);
@@ -190,19 +192,17 @@ export default function LocationAccuracyScreen({ navigation }: LocationAccuracyS
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Location Accuracy</Text>
+        <Text style={styles.headerTitle}>{t('locationAccuracy.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.description}>
-          Choose how precise your location is shared with your connections.
-        </Text>
+        <Text style={styles.description}>{t('locationAccuracy.description')}</Text>
 
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading settings...</Text>
+            <Text style={styles.loadingText}>{t('common.loadingSettings')}</Text>
           </View>
         ) : (
           <>
@@ -218,10 +218,8 @@ export default function LocationAccuracyScreen({ navigation }: LocationAccuracyS
               color={accuracyMode === 'exact' ? '#007AFF' : '#8E8E93'}
             />
             <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Exact GPS Location</Text>
-              <Text style={styles.optionSubtitle}>
-                Share your precise location with exact coordinates
-              </Text>
+              <Text style={styles.optionTitle}>{t('locationAccuracy.exactGps')}</Text>
+              <Text style={styles.optionSubtitle}>{t('locationAccuracy.exactGpsSubtitle')}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -237,10 +235,8 @@ export default function LocationAccuracyScreen({ navigation }: LocationAccuracyS
               color={accuracyMode === 'approximate' ? '#007AFF' : '#8E8E93'}
             />
             <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Approximate Location</Text>
-              <Text style={styles.optionSubtitle}>
-                Share a general area (within ~100 meters) for privacy
-              </Text>
+              <Text style={styles.optionTitle}>{t('locationAccuracy.approximate')}</Text>
+              <Text style={styles.optionSubtitle}>{t('locationAccuracy.approximateSubtitle')}</Text>
             </View>
           </View>
         </TouchableOpacity>

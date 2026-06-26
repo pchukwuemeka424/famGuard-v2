@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 type SleepModeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SleepMode'>;
@@ -23,6 +24,7 @@ interface SleepModeScreenProps {
 }
 
 export default function SleepModeScreen({ navigation }: SleepModeScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(false);
   const [startTime, setStartTime] = useState('22:00');
@@ -150,12 +152,12 @@ export default function SleepModeScreen({ navigation }: SleepModeScreenProps) {
 
       if (error) {
         console.error('Error saving sleep mode:', error);
-        Alert.alert('Error', 'Failed to save sleep mode setting. Please try again.');
+        Alert.alert(t('common.error'), t('sleepMode.alertSaveFailed'));
         await loadSleepModeSettings();
       }
     } catch (error) {
       console.error('Error saving sleep mode:', error);
-      Alert.alert('Error', 'Failed to save sleep mode setting. Please try again.');
+      Alert.alert(t('common.error'), t('sleepMode.alertSaveFailed'));
       await loadSleepModeSettings();
     } finally {
       setSaving(false);
@@ -168,27 +170,25 @@ export default function SleepModeScreen({ navigation }: SleepModeScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sleep Mode</Text>
+        <Text style={styles.headerTitle}>{t('sleepMode.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.description}>
-          Sleep mode reduces notifications during your sleep hours to avoid disturbing you.
-        </Text>
+        <Text style={styles.description}>{t('sleepMode.description')}</Text>
 
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading settings...</Text>
+            <Text style={styles.loadingText}>{t('common.loadingSettings')}</Text>
           </View>
         ) : (
           <>
             <View style={styles.section}>
               <View style={styles.settingRow}>
                 <View style={styles.settingContent}>
-                  <Text style={styles.settingTitle}>Enable Sleep Mode</Text>
-                  <Text style={styles.settingSubtitle}>Reduce notifications during sleep hours</Text>
+                  <Text style={styles.settingTitle}>{t('sleepMode.enableSleepMode')}</Text>
+                  <Text style={styles.settingSubtitle}>{t('sleepMode.enableSleepModeSubtitle')}</Text>
                 </View>
                 {saving ? (
                   <ActivityIndicator size="small" color="#007AFF" />
@@ -206,14 +206,14 @@ export default function SleepModeScreen({ navigation }: SleepModeScreenProps) {
 
         {enabled && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Sleep Hours</Text>
+            <Text style={styles.sectionTitle}>{t('sleepMode.sleepHours')}</Text>
             <View style={styles.timeRow}>
               <View style={styles.timeOption}>
-                <Text style={styles.timeLabel}>Start Time</Text>
+                <Text style={styles.timeLabel}>{t('sleepMode.startTime')}</Text>
                 <Text style={styles.timeValue}>{startTime}</Text>
               </View>
               <View style={styles.timeOption}>
-                <Text style={styles.timeLabel}>End Time</Text>
+                <Text style={styles.timeLabel}>{t('sleepMode.endTime')}</Text>
                 <Text style={styles.timeValue}>{endTime}</Text>
               </View>
             </View>

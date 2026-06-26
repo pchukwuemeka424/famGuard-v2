@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useTravelAdvisory } from '../context/TravelAdvisoryContext';
+import { useTranslation } from '../context/LanguageContext';
 import { travelAdvisoryService } from '../services/travelAdvisoryService';
 import type { RootStackParamList, TravelAdvisory, RouteRiskData } from '../types';
 
@@ -24,6 +25,7 @@ interface TravelAdvisoryScreenProps {
 }
 
 export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScreenProps) {
+  const { t } = useTranslation();
   const {
     currentLocationAdvisories,
     routeRiskData,
@@ -45,7 +47,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
 
   const handleCalculateRoute = async (): Promise<void> => {
     if (!originState || !destinationState) {
-      Alert.alert('Error', 'Please enter both origin and destination states.');
+      Alert.alert(t('common.error'), t('travelAdvisory.alertEnterStates'));
       return;
     }
 
@@ -53,7 +55,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
       setCalculatingRoute(true);
       await getRouteRisk(originState, destinationState, originCity || undefined, destinationCity || undefined);
     } catch (error) {
-      Alert.alert('Error', 'Failed to calculate route risk. Please try again.');
+      Alert.alert(t('common.error'), t('travelAdvisory.alertCalculateFailed'));
     } finally {
       setCalculatingRoute(false);
     }
@@ -93,8 +95,8 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
           <Ionicons name="arrow-back" size={24} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Travel Advisories</Text>
-          <Text style={styles.headerSubtitle}>Stay informed about travel risks</Text>
+          <Text style={styles.headerTitle}>{t('travelAdvisory.title')}</Text>
+          <Text style={styles.headerSubtitle}>{t('travelAdvisory.subtitle')}</Text>
         </View>
         <TouchableOpacity
           onPress={refreshAdvisories}
@@ -115,7 +117,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
           >
             <View style={styles.routeToggleContent}>
               <Ionicons name="map" size={20} color="#007AFF" />
-              <Text style={styles.routeToggleText}>Calculate Route Risk</Text>
+              <Text style={styles.routeToggleText}>{t('travelAdvisory.calculateRouteRisk')}</Text>
             </View>
             <Ionicons
               name={showRouteForm ? 'chevron-up' : 'chevron-down'}
@@ -127,40 +129,40 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
           {showRouteForm && (
             <View style={styles.routeForm}>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Origin State *</Text>
+                <Text style={styles.inputLabel}>{t('travelAdvisory.originState')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Lagos"
+                  placeholder={t('travelAdvisory.originStatePlaceholder')}
                   value={originState}
                   onChangeText={setOriginState}
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Origin City (Optional)</Text>
+                <Text style={styles.inputLabel}>{t('travelAdvisory.originCity')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Ikeja"
+                  placeholder={t('travelAdvisory.originCityPlaceholder')}
                   value={originCity}
                   onChangeText={setOriginCity}
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Destination State *</Text>
+                <Text style={styles.inputLabel}>{t('travelAdvisory.destinationState')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Abuja"
+                  placeholder={t('travelAdvisory.destinationStatePlaceholder')}
                   value={destinationState}
                   onChangeText={setDestinationState}
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Destination City (Optional)</Text>
+                <Text style={styles.inputLabel}>{t('travelAdvisory.destinationCity')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Garki"
+                  placeholder={t('travelAdvisory.destinationCityPlaceholder')}
                   value={destinationCity}
                   onChangeText={setDestinationCity}
                   placeholderTextColor="#9CA3AF"
@@ -177,7 +179,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
                 ) : (
                   <>
                     <Ionicons name="analytics" size={20} color="#FFFFFF" />
-                    <Text style={styles.calculateButtonText}>Calculate Risk</Text>
+                    <Text style={styles.calculateButtonText}>{t('travelAdvisory.calculateRisk')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -189,14 +191,14 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
             <View style={styles.routeRiskCard}>
               <View style={styles.routeRiskHeader}>
                 <Ionicons name="analytics" size={24} color="#007AFF" />
-                <Text style={styles.routeRiskTitle}>Route Risk Assessment</Text>
+                <Text style={styles.routeRiskTitle}>{t('travelAdvisory.routeRiskAssessment')}</Text>
                 <TouchableOpacity onPress={clearRouteRisk} style={styles.closeButton}>
                   <Ionicons name="close" size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
               <View style={styles.routeRiskContent}>
                 <View style={styles.riskScoreContainer}>
-                  <Text style={styles.riskScoreLabel}>Risk Score</Text>
+                  <Text style={styles.riskScoreLabel}>{t('travelAdvisory.riskScore')}</Text>
                   <View
                     style={[
                       styles.riskScoreCircle,
@@ -216,15 +218,15 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
                 <View style={styles.incidentStats}>
                   <View style={styles.statItem}>
                     <Text style={styles.statValue}>{routeRiskData.incidentCount24h}</Text>
-                    <Text style={styles.statLabel}>Last 24h</Text>
+                    <Text style={styles.statLabel}>{t('travelAdvisory.last24h')}</Text>
                   </View>
                   <View style={styles.statItem}>
                     <Text style={styles.statValue}>{routeRiskData.incidentCount7d}</Text>
-                    <Text style={styles.statLabel}>Last 7 days</Text>
+                    <Text style={styles.statLabel}>{t('travelAdvisory.last7Days')}</Text>
                   </View>
                   <View style={styles.statItem}>
                     <Text style={styles.statValue}>{routeRiskData.incidentCount30d}</Text>
-                    <Text style={styles.statLabel}>Last 30 days</Text>
+                    <Text style={styles.statLabel}>{t('travelAdvisory.last30Days')}</Text>
                   </View>
                 </View>
                 <View style={styles.routeInfo}>
@@ -245,7 +247,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
 
         {/* Current Location Advisories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Advisories for Your Location</Text>
+          <Text style={styles.sectionTitle}>{t('travelAdvisory.advisoriesForLocation')}</Text>
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#007AFF" />
@@ -253,8 +255,8 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
           ) : currentLocationAdvisories.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="checkmark-circle" size={48} color="#10B981" />
-              <Text style={styles.emptyStateText}>No active advisories</Text>
-              <Text style={styles.emptyStateSubtext}>Your current location appears safe</Text>
+              <Text style={styles.emptyStateText}>{t('travelAdvisory.noActiveAdvisories')}</Text>
+              <Text style={styles.emptyStateSubtext}>{t('travelAdvisory.locationAppearsSafe')}</Text>
             </View>
           ) : (
             currentLocationAdvisories.map((advisory) => (
@@ -281,7 +283,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
                 <Text style={styles.advisoryDescription}>{advisory.description}</Text>
                 {advisory.affectedAreas && advisory.affectedAreas.length > 0 && (
                   <View style={styles.affectedAreas}>
-                    <Text style={styles.affectedAreasLabel}>Affected Areas:</Text>
+                    <Text style={styles.affectedAreasLabel}>{t('travelAdvisory.affectedAreas')}</Text>
                     <Text style={styles.affectedAreasText}>
                       {advisory.affectedAreas.join(', ')}
                     </Text>
@@ -304,7 +306,7 @@ export default function TravelAdvisoryScreen({ navigation }: TravelAdvisoryScree
                   </View>
                 </View>
                 {advisory.source && (
-                  <Text style={styles.advisorySource}>Source: {advisory.source}</Text>
+                  <Text style={styles.advisorySource}>{t('travelAdvisory.source', { source: advisory.source })}</Text>
                 )}
               </View>
             ))

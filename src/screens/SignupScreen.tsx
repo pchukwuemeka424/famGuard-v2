@@ -19,6 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { searchLgas, searchStates } from '../data/nigeriaLocations';
 import type { RootStackParamList } from '../types';
 
@@ -37,6 +39,7 @@ interface SignupScreenProps {
 }
 
 export default function SignupScreen({ navigation }: SignupScreenProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -97,32 +100,32 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
   const handleSignup = async (): Promise<void> => {
     if (!name.trim() || !email.trim() || !phone || !password || !confirmPassword) {
-      setError('Please fill in all required fields');
+      setError(t('signup.errorFillRequired'));
       return;
     }
 
     if (!selectedState) {
-      setError('Please select your state');
+      setError(t('signup.errorSelectState'));
       return;
     }
 
     if (!selectedLga) {
-      setError('Please select your local government area');
+      setError(t('signup.errorSelectLga'));
       return;
     }
 
     if (phone.length !== 11) {
-      setError('Phone number must be exactly 11 digits');
+      setError(t('signup.errorPhone11Digits'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('signup.errorPasswordMin'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('signup.errorPasswordsNoMatch'));
       return;
     }
 
@@ -132,7 +135,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
     try {
       await signup(name.trim(), email.trim(), phone, password, selectedState, selectedLga);
     } catch (err: any) {
-      setError(err.message || 'Signup failed. Please try again.');
+      setError(err.message || t('signup.errorSignupFailed'));
     } finally {
       setLoading(false);
     }
@@ -221,7 +224,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
   );
 
   const pickerTitle =
-    activePicker === 'state' ? 'Select State' : 'Select Local Government';
+    activePicker === 'state' ? t('signup.selectState') : t('signup.selectLga');
 
   const pickerOptions = activePicker === 'state' ? filteredStates : filteredLgas;
 
@@ -246,6 +249,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <LanguageSwitcher compact />
           <View style={styles.banner}>
             <Image source={SIGNUP_HEADER} style={styles.bannerImage} resizeMode="cover" />
             <LinearGradient
@@ -269,8 +273,8 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
           </View>
 
           <View style={styles.brandBlock}>
-            <Text style={styles.brandName}>FamGuard</Text>
-            <Text style={styles.tagline}>Stay Safe, Stay Connected</Text>
+            <Text style={styles.brandName}>{t('common.appName')}</Text>
+            <Text style={styles.tagline}>{t('signup.tagline')}</Text>
             <View style={styles.taglineAccent}>
               <View style={styles.taglineLine} />
               <View style={styles.taglineDot} />
@@ -278,19 +282,19 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
           </View>
 
           <View style={styles.formCard}>
-            <Text style={styles.cardTitle}>Create account</Text>
-            <Text style={styles.cardSubtitle}>Set up your profile to start protecting your family</Text>
+            <Text style={styles.cardTitle}>{t('signup.createAccount')}</Text>
+            <Text style={styles.cardSubtitle}>{t('signup.createAccountSubtitle')}</Text>
 
             {renderField(name, setName, {
               icon: 'person-outline',
-              placeholder: 'Full name',
+              placeholder: t('signup.fullNamePlaceholder'),
               autoCapitalize: 'words',
               autoComplete: 'name',
             })}
 
             {renderField(email, setEmail, {
               icon: 'mail-outline',
-              placeholder: 'Email address',
+              placeholder: t('signup.emailPlaceholder'),
               keyboardType: 'email-address',
               autoComplete: 'email',
             })}
@@ -298,11 +302,11 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
             <View style={styles.fieldWrap}>
               <View style={styles.field}>
                 <Ionicons name="call-outline" size={18} color="#64748B" />
-                <Text style={styles.phonePrefix}>+234</Text>
+                <Text style={styles.phonePrefix}>{t('common.countryCode')}</Text>
                 <View style={styles.phoneDivider} />
                 <TextInput
                   style={styles.fieldInput}
-                  placeholder="Phone number"
+                  placeholder={t('signup.phonePlaceholder')}
                   placeholderTextColor="#94A3B8"
                   value={phone}
                   onChangeText={handlePhoneChange}
@@ -319,19 +323,19 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
                 ) : null}
               </View>
               {phone.length > 0 && !phoneValid ? (
-                <Text style={styles.fieldHint}>{phone.length}/11 digits</Text>
+                <Text style={styles.fieldHint}>{t('login.phoneDigitsHint', { count: phone.length })}</Text>
               ) : null}
             </View>
 
             <View style={styles.locationRow}>
               <View style={styles.locationCol}>
-                {renderSelectField(selectedState, 'State', 'map-outline', () => openPicker('state'), true)}
+                {renderSelectField(selectedState, t('signup.statePlaceholder'), 'map-outline', () => openPicker('state'), true)}
               </View>
               {selectedState ? (
                 <View style={styles.locationCol}>
                   {renderSelectField(
                     selectedLga,
-                    'LGA',
+                    t('signup.lgaPlaceholder'),
                     'business-outline',
                     () => openPicker('lga'),
                     true,
@@ -342,33 +346,31 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
             {renderField(password, setPassword, {
               icon: 'lock-closed-outline',
-              placeholder: 'Password',
+              placeholder: t('signup.passwordPlaceholder'),
               secure: true,
               visible: showPassword,
               onToggleSecure: () => setShowPassword(!showPassword),
               hint:
                 password.length > 0 && !passwordValid
-                  ? 'At least 6 characters required'
+                  ? t('signup.passwordMinHint')
                   : undefined,
             })}
 
             {renderField(confirmPassword, setConfirmPassword, {
               icon: 'lock-closed-outline',
-              placeholder: 'Confirm password',
+              placeholder: t('signup.confirmPasswordPlaceholder'),
               secure: true,
               visible: showConfirmPassword,
               onToggleSecure: () => setShowConfirmPassword(!showConfirmPassword),
               hint:
                 confirmPassword.length > 0 && !passwordsMatch
-                  ? 'Passwords do not match'
+                  ? t('signup.passwordsNoMatch')
                   : undefined,
             })}
 
             <View style={styles.trustRow}>
               <Ionicons name="shield-checkmark" size={15} color={ACCENT_RED} />
-              <Text style={styles.trustText}>
-                Your data is private and never shared with third parties.
-              </Text>
+              <Text style={styles.trustText}>{t('signup.trustText')}</Text>
             </View>
 
             {renderError()}
@@ -392,7 +394,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
                     <View style={styles.btnIconLeft}>
                       <Ionicons name="shield-checkmark" size={15} color="#FFFFFF" />
                     </View>
-                    <Text style={styles.primaryButtonText}>Create Account</Text>
+                    <Text style={styles.primaryButtonText}>{t('signup.createAccountButton')}</Text>
                     <View style={styles.btnIconRight}>
                       <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
                     </View>
@@ -402,16 +404,16 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
             </TouchableOpacity>
 
             <View style={styles.loginRow}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={styles.loginText}>{t('signup.alreadyHaveAccount')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
-                <Text style={styles.loginLink}>Sign In</Text>
+                <Text style={styles.loginLink}>{t('signup.signIn')}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.footerRow}>
             <Ionicons name="shield-checkmark" size={14} color="#64748B" />
-            <Text style={styles.footerText}>Your family&apos;s safety is our priority</Text>
+            <Text style={styles.footerText}>{t('signup.footerText')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -431,7 +433,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
               <Ionicons name="search-outline" size={17} color="#94A3B8" />
               <TextInput
                 style={styles.pickerSearchInput}
-                placeholder={activePicker === 'state' ? 'Search states...' : 'Search LGAs...'}
+                placeholder={activePicker === 'state' ? t('signup.searchStates') : t('signup.searchLgas')}
                 placeholderTextColor="#94A3B8"
                 value={pickerSearch}
                 onChangeText={setPickerSearch}
@@ -470,7 +472,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
               }}
               ListEmptyComponent={
                 <View style={styles.pickerEmpty}>
-                  <Text style={styles.pickerEmptyText}>No results found</Text>
+                  <Text style={styles.pickerEmptyText}>{t('signup.noResultsFound')}</Text>
                 </View>
               }
             />

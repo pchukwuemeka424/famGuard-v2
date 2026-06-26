@@ -13,7 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import type { AppLanguage } from '../i18n/types';
 
 type LanguageRegionScreenNavigationProp = StackNavigationProp<RootStackParamList, 'LanguageRegion'>;
 
@@ -21,34 +23,29 @@ interface LanguageRegionScreenProps {
   navigation: LanguageRegionScreenNavigationProp;
 }
 
-const languages = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Spanish' },
-  { code: 'fr', name: 'French' },
-  { code: 'de', name: 'German' },
-  { code: 'zh', name: 'Chinese' },
-];
-
 const regions = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'IN', name: 'India' },
+  { code: 'NG', nameKey: 'languageRegion.nigeria' },
 ];
 
 export default function LanguageRegionScreen({ navigation }: LanguageRegionScreenProps) {
   const { user } = useAuth();
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [selectedRegion, setSelectedRegion] = useState('US');
+  const { t, language, setLanguage, supportedLanguages } = useTranslation();
+  const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>(language);
+  const [selectedRegion, setSelectedRegion] = useState('NG');
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const realtimeChannelRef = useRef<any>(null);
+  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    setSelectedLanguage(language);
+  }, [language]);
 
   useEffect(() => {
     if (user?.id) {
       loadSettings();
       setupRealtimeSubscription();
+    } else {
+      setLoading(false);
     }
 
     return () => {
@@ -83,12 +80,14 @@ export default function LanguageRegionScreen({ navigation }: LanguageRegionScree
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newData = payload.new as any;
-          if (newData) {
-            if (newData.language) setSelectedLanguage(newData.language);
-            if (newData.region) setSelectedRegion(newData.region);
+          const newData = payload.new as { language?: string; region?: string };
+          if (newData?.language) {
+            setSelectedLanguage(newData.language as AppLanguage);
           }
-        }
+          if (newData?.region) {
+            setSelectedRegion(newData.region);
+          }
+        },
       )
       .subscribe();
 
@@ -114,7 +113,7 @@ export default function LanguageRegionScreen({ navigation }: LanguageRegionScree
           console.error('Error loading language/region settings:', error);
         }
       } else if (data) {
-        if (data.language) setSelectedLanguage(data.language);
+        if (data.language) setSelectedLanguage(data.language as AppLanguage);
         if (data.region) setSelectedRegion(data.region);
       }
     } catch (error) {
@@ -128,45 +127,42 @@ export default function LanguageRegionScreen({ navigation }: LanguageRegionScree
     if (!user?.id) return;
 
     try {
-      await supabase
-        .from('user_settings')
-        .insert({
-          user_id: user.id,
-          language: 'en',
-          region: 'US',
-        });
+      await supabase.from('user_settings').insert({
+        user_id: user.id,
+        language: 'en',
+        region: 'NG',
+      });
     } catch (error) {
       console.error('Error creating default settings:', error);
     }
   };
 
-  const handleSelectLanguage = async (code: string) => {
-    if (!user?.id || saving) return;
+  const handleSelectLanguage = async (code: AppLanguage) => {
+    if (saving) return;
 
     try {
       setSaving(true);
       setSelectedLanguage(code);
+      await setLanguage(code);
 
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert(
+      if (user?.id) {
+        const { error } = await supabase.from('user_settings').upsert(
           {
             user_id: user.id,
             language: code,
           },
-          {
-            onConflict: 'user_id',
-          }
+          { onConflict: 'user_id' },
         );
 
-      if (error) {
-        console.error('Error saving language:', error);
-        Alert.alert('Error', 'Failed to save language setting. Please try again.');
-        await loadSettings();
+        if (error) {
+          console.error('Error saving language:', error);
+          Alert.alert(t('common.error'), t('languageRegion.alertSaveLanguageFailed'));
+          await loadSettings();
+        }
       }
     } catch (error) {
       console.error('Error saving language:', error);
-      Alert.alert('Error', 'Failed to save language setting. Please try again.');
+      Alert.alert(t('common.error'), t('languageRegion.alertSaveLanguageFailed'));
       await loadSettings();
     } finally {
       setSaving(false);
@@ -180,30 +176,31 @@ export default function LanguageRegionScreen({ navigation }: LanguageRegionScree
       setSaving(true);
       setSelectedRegion(code);
 
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert(
-          {
-            user_id: user.id,
-            region: code,
-          },
-          {
-            onConflict: 'user_id',
-          }
-        );
+      const { error } = await supabase.from('user_settings').upsert(
+        {
+          user_id: user.id,
+          region: code,
+        },
+        { onConflict: 'user_id' },
+      );
 
       if (error) {
         console.error('Error saving region:', error);
-        Alert.alert('Error', 'Failed to save region setting. Please try again.');
+        Alert.alert(t('common.error'), t('languageRegion.alertSaveRegionFailed'));
         await loadSettings();
       }
     } catch (error) {
       console.error('Error saving region:', error);
-      Alert.alert('Error', 'Failed to save region setting. Please try again.');
+      Alert.alert(t('common.error'), t('languageRegion.alertSaveRegionFailed'));
       await loadSettings();
     } finally {
       setSaving(false);
     }
+  };
+
+  const getLanguageLabel = (code: AppLanguage): string => {
+    const option = supportedLanguages.find((lang) => lang.code === code);
+    return option ? `${option.name} (${option.nativeName})` : code;
   };
 
   return (
@@ -212,7 +209,7 @@ export default function LanguageRegionScreen({ navigation }: LanguageRegionScree
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Language & Region</Text>
+        <Text style={styles.headerTitle}>{t('languageRegion.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -220,42 +217,42 @@ export default function LanguageRegionScreen({ navigation }: LanguageRegionScree
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading settings...</Text>
+            <Text style={styles.loadingText}>{t('common.loadingSettings')}</Text>
           </View>
         ) : (
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Language</Text>
-              {languages.map((lang) => (
+              <Text style={styles.sectionTitle}>{t('languageRegion.language')}</Text>
+              {supportedLanguages.map((lang) => (
                 <TouchableOpacity
                   key={lang.code}
                   style={[styles.option, selectedLanguage === lang.code && styles.optionSelected]}
                   onPress={() => handleSelectLanguage(lang.code)}
                   disabled={saving}
                 >
-              <Text style={styles.optionText}>{lang.name}</Text>
-              {selectedLanguage === lang.code && (
-                <Ionicons name="checkmark" size={20} color="#007AFF" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+                  <Text style={styles.optionText}>{getLanguageLabel(lang.code)}</Text>
+                  {selectedLanguage === lang.code && (
+                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Region</Text>
-          {regions.map((region) => (
-            <TouchableOpacity
-              key={region.code}
-              style={[styles.option, selectedRegion === region.code && styles.optionSelected]}
-              onPress={() => handleSelectRegion(region.code)}
-            >
-              <Text style={styles.optionText}>{region.name}</Text>
-              {selectedRegion === region.code && (
-                <Ionicons name="checkmark" size={20} color="#007AFF" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('languageRegion.region')}</Text>
+              {regions.map((region) => (
+                <TouchableOpacity
+                  key={region.code}
+                  style={[styles.option, selectedRegion === region.code && styles.optionSelected]}
+                  onPress={() => handleSelectRegion(region.code)}
+                >
+                  <Text style={styles.optionText}>{t(region.nameKey)}</Text>
+                  {selectedRegion === region.code && (
+                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
           </>
         )}
       </ScrollView>
@@ -331,4 +328,3 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
 });
-

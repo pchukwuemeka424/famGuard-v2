@@ -19,6 +19,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useIncidents } from '../context/IncidentContext';
 import { useAppSetting } from '../context/AppSettingContext';
+import { useTranslation } from '../context/LanguageContext';
 import { locationService } from '../services/locationService';
 import { incidentProximityService } from '../services/incidentProximityService';
 import { supabase } from '../lib/supabase';
@@ -42,6 +43,7 @@ const DEFAULT_DISTANCE_KM = 5;
 const LIST_BACKGROUND = '#E8EEF6';
 
 export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { incidents, fetchNearbyIncidents, userLocation, setUserLocation, calculateDistance, loading, refreshIncidents } =
     useIncidents();
@@ -181,7 +183,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
     const now = new Date();
     const time = new Date(timestamp);
     const diff = Math.floor((now.getTime() - time.getTime()) / 1000 / 60);
-    if (diff < 1) return 'Just now';
+    if (diff < 1) return t('common.justNow');
     if (diff < 60) return `${diff}m ago`;
     const hours = Math.floor(diff / 60);
     if (hours < 24) return `${hours}h ago`;
@@ -216,10 +218,16 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
     return colors[category] || '#94A3B8';
   };
 
+  const getCategoryLabel = (category: string): string => {
+    const key = `common.incidentCategories.${category.toLowerCase()}`;
+    const translated = t(key);
+    return translated !== key ? translated : category;
+  };
+
   const sortLabels: Record<SortMode, string> = {
-    newest: 'Newest',
-    nearest: 'Nearest',
-    upvotes: 'Most upvoted',
+    newest: t('incidents.sortNewest'),
+    nearest: t('incidents.sortNearest'),
+    upvotes: t('incidents.sortMostUpvoted'),
   };
 
   const renderIncidentCard = ({ item }: { item: Incident }) => {
@@ -241,12 +249,12 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
           <View style={styles.cardTopRow}>
             <View style={[styles.categoryPill, { backgroundColor: accentColor + '18' }]}>
               <Ionicons name={getCategoryIcon(item.category)} size={13} color={accentColor} />
-              <Text style={[styles.categoryPillText, { color: accentColor }]}>{item.category}</Text>
+              <Text style={[styles.categoryPillText, { color: accentColor }]}>{getCategoryLabel(item.category)}</Text>
             </View>
             {item.confirmed ? (
               <View style={styles.verifiedBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
-                <Text style={styles.verifiedText}>Verified</Text>
+                <Text style={styles.verifiedText}>{t('common.verified')}</Text>
               </View>
             ) : null}
           </View>
@@ -279,7 +287,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
               </View>
               <View style={styles.metaChip}>
                 <Ionicons name="navigate-outline" size={13} color="#64748B" />
-                <Text style={styles.metaText}>{distance.toFixed(1)} km</Text>
+                <Text style={styles.metaText}>{distance.toFixed(1)} {t('common.kmUnit')}</Text>
               </View>
             </View>
 
@@ -289,7 +297,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
                 <Text style={styles.upvoteCount}>{item.upvotes}</Text>
               </View>
               <Text style={styles.reporterText}>
-                {item.reporter.isAnonymous ? 'Anonymous' : item.reporter.name}
+                {item.reporter.isAnonymous ? t('common.anonymous') : item.reporter.name}
               </Text>
             </View>
           </View>
@@ -305,14 +313,14 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
         onPress={() => setViewMode('list')}
       >
         <Ionicons name="list" size={18} color={viewMode === 'list' ? '#2563EB' : '#94A3B8'} />
-        <Text style={[styles.viewButtonText, viewMode === 'list' && styles.viewButtonTextActive]}>List</Text>
+        <Text style={[styles.viewButtonText, viewMode === 'list' && styles.viewButtonTextActive]}>{t('common.list')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.viewButton, viewMode === 'map' && styles.viewButtonActive]}
         onPress={() => setViewMode('map')}
       >
         <Ionicons name="map" size={18} color={viewMode === 'map' ? '#2563EB' : '#94A3B8'} />
-        <Text style={[styles.viewButtonText, viewMode === 'map' && styles.viewButtonTextActive]}>Map</Text>
+        <Text style={[styles.viewButtonText, viewMode === 'map' && styles.viewButtonTextActive]}>{t('common.map')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -325,21 +333,21 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
             <Ionicons name="alert-circle" size={18} color="#2563EB" />
           </View>
           <Text style={[styles.statValue, styles.statValueReports]}>{filteredIncidents.length}</Text>
-          <Text style={[styles.statLabel, styles.statLabelReports]}>Reports</Text>
+          <Text style={[styles.statLabel, styles.statLabelReports]}>{t('incidents.reports')}</Text>
         </View>
         <View style={[styles.statCard, styles.statCardVerified]}>
           <View style={styles.statIconWrap}>
             <Ionicons name="shield-checkmark" size={18} color="#16A34A" />
           </View>
           <Text style={[styles.statValue, styles.statValueVerified]}>{verifiedCount}</Text>
-          <Text style={[styles.statLabel, styles.statLabelVerified]}>Verified</Text>
+          <Text style={[styles.statLabel, styles.statLabelVerified]}>{t('common.verified')}</Text>
         </View>
         <View style={[styles.statCard, styles.statCardRadius]}>
           <View style={styles.statIconWrap}>
             <Ionicons name="radio-outline" size={18} color="#EA580C" />
           </View>
-          <Text style={[styles.statValue, styles.statValueRadius]}>{DEFAULT_DISTANCE_KM} km</Text>
-          <Text style={[styles.statLabel, styles.statLabelRadius]}>Radius</Text>
+          <Text style={[styles.statValue, styles.statValueRadius]}>{t('incidents.radiusValue', { km: DEFAULT_DISTANCE_KM })}</Text>
+          <Text style={[styles.statLabel, styles.statLabelRadius]}>{t('incidents.radius')}</Text>
         </View>
       </View>
 
@@ -347,7 +355,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
         <Ionicons name="search" size={18} color="#94A3B8" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search reports..."
+          placeholder={t('incidents.searchPlaceholder')}
           placeholderTextColor="#94A3B8"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -431,7 +439,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
                 longitudeDelta: 0.08,
               }}
             >
-              <Marker coordinate={userLocation} title="You">
+              <Marker coordinate={userLocation} title={t('incidents.mapMarkerYou')}>
                 <View style={styles.userMarker}>
                   <Ionicons name="person" size={14} color="#FFFFFF" />
                 </View>
@@ -473,7 +481,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
               loading ? (
                 <View style={styles.emptyState}>
                   <ActivityIndicator size="large" color="#2563EB" />
-                  <Text style={styles.emptyStateTitle}>Loading reports...</Text>
+                  <Text style={styles.emptyStateTitle}>{t('common.loading')}</Text>
                 </View>
               ) : (
                 <View style={styles.emptyState}>
@@ -481,12 +489,12 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
                     <Ionicons name="shield-checkmark" size={40} color="#22C55E" />
                   </View>
                   <Text style={styles.emptyStateTitle}>
-                    {searchQuery ? 'No matching reports' : 'All clear in your area'}
+                    {searchQuery ? t('incidents.noMatchingTitle') : t('incidents.allClearTitle')}
                   </Text>
                   <Text style={styles.emptyStateText}>
                     {searchQuery
-                      ? 'Try adjusting your search.'
-                      : 'No incidents reported nearby. Stay safe and check back for live updates.'}
+                      ? t('incidents.noMatchingText')
+                      : t('incidents.allClearText')}
                   </Text>
                   {!hideReportIncident ? (
                     <TouchableOpacity
@@ -494,7 +502,7 @@ export default function IncidentFeedScreen({ navigation }: IncidentFeedScreenPro
                       onPress={() => navigation.navigate('ReportIncident')}
                     >
                       <Ionicons name="add-circle-outline" size={18} color="#2563EB" />
-                      <Text style={styles.emptyActionText}>Report an incident</Text>
+                      <Text style={styles.emptyActionText}>{t('incidents.reportAnIncident')}</Text>
                     </TouchableOpacity>
                   ) : null}
                 </View>

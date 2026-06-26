@@ -18,6 +18,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useCheckIn } from '../context/CheckInContext';
 import { useConnection } from '../context/ConnectionContext';
+import { useTranslation } from '../context/LanguageContext';
 import CheckInHeader from '../components/CheckInHeader';
 import CheckInConnectionPicker from '../components/CheckInConnectionPicker';
 import type { MainTabParamList, RootStackParamList, UserCheckIn } from '../types';
@@ -37,6 +38,7 @@ interface CheckInScreenProps {
 type PickerStatus = 'safe' | 'delayed';
 
 export default function CheckInScreen({ navigation }: CheckInScreenProps) {
+  const { t } = useTranslation();
   const { settings, lastCheckIn, loading, checkIn, refreshCheckIns } = useCheckIn();
   const { connections } = useConnection();
   const insets = useSafeAreaInsets();
@@ -58,11 +60,11 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
   const openPicker = (status: PickerStatus): void => {
     if (notifyableConnections.length === 0) {
       Alert.alert(
-        'No Connections',
-        'Add connections first so you can notify them when you check in.',
+        t('checkIn.alertNoConnectionsTitle'),
+        t('checkIn.alertNoConnectionsMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Add Connections', onPress: () => navigation.navigate('Connections') },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('checkIn.alertAddConnections'), onPress: () => navigation.navigate('Connections') },
         ]
       );
       return;
@@ -74,7 +76,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
 
   const handleConfirmCheckIn = async (selectedUserIds: string[]): Promise<void> => {
     if (selectedUserIds.length === 0) {
-      Alert.alert('Select Connections', 'Choose at least one connection to notify.');
+      Alert.alert(t('checkIn.alertSelectConnections'), t('checkIn.alertSelectAtLeastOne'));
       return;
     }
 
@@ -89,17 +91,18 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
           console.error('Error refreshing check-ins:', error);
         });
 
-        const statusLabel = pickerStatus === 'safe' ? 'safe' : 'delayed';
+        const statusLabel =
+          pickerStatus === 'safe' ? t('checkIn.statusSafe') : t('checkIn.statusDelayed');
         Alert.alert(
-          'Check-in Sent',
-          `Your ${statusLabel} status was shared with ${selectedUserIds.length} connection${selectedUserIds.length > 1 ? 's' : ''}.`,
-          [{ text: 'OK' }]
+          t('checkIn.alertCheckInSentTitle'),
+          t('checkIn.alertCheckInSentMessage', { status: statusLabel, count: selectedUserIds.length }),
+          [{ text: t('common.ok') }]
         );
       } else {
-        Alert.alert('Error', 'Failed to check in. Please try again.');
+        Alert.alert(t('common.error'), t('checkIn.alertCheckInFailed'));
       }
     } catch {
-      Alert.alert('Error', 'An error occurred. Please try again.');
+      Alert.alert(t('common.error'), t('home.alertGenericError'));
     } finally {
       setCheckingIn(false);
     }
@@ -110,7 +113,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
     const time = new Date(timestamp);
     const diff = Math.floor((now.getTime() - time.getTime()) / 1000 / 60);
 
-    if (diff < 1) return 'Just now';
+    if (diff < 1) return t('common.justNow');
     if (diff < 60) return `${diff}m ago`;
     const hours = Math.floor(diff / 60);
     if (hours < 24) return `${hours}h ago`;
@@ -120,12 +123,12 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
 
   const getStatusLabel = (status: UserCheckIn['status']): string => {
     const labels: Record<UserCheckIn['status'], string> = {
-      safe: 'Safe',
-      unsafe: 'Unsafe',
-      delayed: 'Delayed',
-      missed: 'Missed',
+      safe: t('checkIn.statusSafe'),
+      unsafe: t('checkIn.statusUnsafe'),
+      delayed: t('checkIn.statusDelayed'),
+      missed: t('checkIn.statusMissed'),
     };
-    return labels[status] || 'Unknown';
+    return labels[status] || t('common.unknown');
   };
 
   const getStatusBadgeStyle = (status?: UserCheckIn['status']) => {
@@ -143,10 +146,10 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
   };
 
   const badgeStyle = getStatusBadgeStyle(lastCheckIn?.status);
-  const statusBadgeText = lastCheckIn ? getStatusLabel(lastCheckIn.status) : 'Not Checked In';
+  const statusBadgeText = lastCheckIn ? getStatusLabel(lastCheckIn.status) : t('checkIn.notCheckedIn');
   const contactsNotified = lastCheckIn ? lastNotifiedCount : 0;
-  const lastCheckInLabel = lastCheckIn ? formatTimeAgo(lastCheckIn.createdAt) : 'Never';
-  const currentStatusLabel = lastCheckIn ? getStatusLabel(lastCheckIn.status) : 'Unknown';
+  const lastCheckInLabel = lastCheckIn ? formatTimeAgo(lastCheckIn.createdAt) : t('common.never');
+  const currentStatusLabel = lastCheckIn ? getStatusLabel(lastCheckIn.status) : t('common.unknown');
 
   return (
     <View style={styles.container}>
@@ -171,9 +174,9 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
               <Image source={PROMO_SHIELD_IMAGE} style={styles.bannerShield} resizeMode="contain" />
             </View>
             <View style={styles.bannerTextWrap}>
-              <Text style={styles.bannerTitle}>Your safety matters</Text>
+              <Text style={styles.bannerTitle}>{t('checkIn.bannerTitle')}</Text>
               <Text style={styles.bannerSubtitle}>
-                Quickly update your status and keep your loved ones informed.
+                {t('checkIn.bannerSubtitle')}
               </Text>
             </View>
             <Image source={PROMO_FAMILY_IMAGE} style={styles.bannerFamily} resizeMode="contain" />
@@ -197,8 +200,8 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
                 <View style={styles.quickIconCircle}>
                   <Ionicons name="checkmark" size={28} color="#10B981" />
                 </View>
-                <Text style={styles.quickTitle}>I'm Safe</Text>
-                <Text style={styles.quickSubtitle}>Notify your contacts</Text>
+                <Text style={styles.quickTitle}>{t('checkIn.imSafe')}</Text>
+                <Text style={styles.quickSubtitle}>{t('checkIn.imSafeSubtitle')}</Text>
                 <View style={styles.quickArrow}>
                   <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
                 </View>
@@ -220,8 +223,8 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
                 <View style={styles.quickIconCircle}>
                   <Ionicons name="time" size={26} color="#F59E0B" />
                 </View>
-                <Text style={styles.quickTitle}>Delayed</Text>
-                <Text style={styles.quickSubtitle}>I'll check-in later</Text>
+                <Text style={styles.quickTitle}>{t('checkIn.delayed')}</Text>
+                <Text style={styles.quickSubtitle}>{t('checkIn.delayedSubtitle')}</Text>
                 <View style={styles.quickArrow}>
                   <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
                 </View>
@@ -233,7 +236,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
         {checkingIn && (
           <View style={styles.loadingBanner}>
             <ActivityIndicator size="small" color="#10B981" />
-            <Text style={styles.loadingText}>Sending your check-in...</Text>
+            <Text style={styles.loadingText}>{t('checkIn.sendingCheckIn')}</Text>
           </View>
         )}
 
@@ -248,17 +251,19 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
                 <Ionicons name="calendar-outline" size={22} color="#3B82F6" />
               </View>
               <View style={styles.settingsContent}>
-                <Text style={styles.settingsTitle}>Check-in Settings</Text>
+                <Text style={styles.settingsTitle}>{t('checkIn.checkInSettings')}</Text>
                 <View style={styles.settingsRow}>
                   <Ionicons name="sync-outline" size={14} color="#94A3B8" />
                   <Text style={styles.settingsDetail}>
-                    Automatic check-ins: {settings.autoCheckInEnabled ? 'Enabled' : 'Disabled'}
+                    {t('checkIn.automaticCheckIns', {
+                      status: settings.autoCheckInEnabled ? t('common.enabled') : t('common.disabled'),
+                    })}
                   </Text>
                 </View>
                 <View style={styles.settingsRow}>
                   <Ionicons name="time-outline" size={14} color="#94A3B8" />
                   <Text style={styles.settingsDetail}>
-                    Interval: Every {settings.checkInIntervalMinutes} minutes
+                    {t('checkIn.intervalEvery', { minutes: settings.checkInIntervalMinutes })}
                   </Text>
                 </View>
               </View>
@@ -269,7 +274,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
 
         <View style={styles.section}>
           <View style={styles.statusHeader}>
-            <Text style={styles.statusSectionTitle}>Your Status</Text>
+            <Text style={styles.statusSectionTitle}>{t('checkIn.yourStatus')}</Text>
             <View style={[styles.statusBadge, { backgroundColor: badgeStyle.bg }]}>
               <Text style={[styles.statusBadgeText, { color: badgeStyle.text }]}>{statusBadgeText}</Text>
             </View>
@@ -280,7 +285,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
               <View style={[styles.statIconWrap, { backgroundColor: '#D1FAE5' }]}>
                 <Ionicons name="people" size={18} color="#10B981" />
               </View>
-              <Text style={styles.statLabel}>Contacts Notified</Text>
+              <Text style={styles.statLabel}>{t('checkIn.contactsNotified')}</Text>
               <Text style={styles.statValue}>{contactsNotified}</Text>
             </View>
 
@@ -290,7 +295,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
               <View style={[styles.statIconWrap, { backgroundColor: '#FEF3C7' }]}>
                 <Ionicons name="time" size={18} color="#F59E0B" />
               </View>
-              <Text style={styles.statLabel}>Last Check-in</Text>
+              <Text style={styles.statLabel}>{t('checkIn.lastCheckIn')}</Text>
               <Text style={styles.statValue}>{lastCheckInLabel}</Text>
             </View>
 
@@ -300,7 +305,7 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
               <View style={[styles.statIconWrap, { backgroundColor: '#EDE9FE' }]}>
                 <Ionicons name="shield-checkmark" size={18} color="#8B5CF6" />
               </View>
-              <Text style={styles.statLabel}>Current Status</Text>
+              <Text style={styles.statLabel}>{t('checkIn.currentStatus')}</Text>
               <Text style={styles.statValue}>{currentStatusLabel}</Text>
             </View>
           </View>
@@ -317,9 +322,9 @@ export default function CheckInScreen({ navigation }: CheckInScreenProps) {
                 <Ionicons name="person-add" size={22} color="#6366F1" />
               </View>
               <View style={styles.addConnectionsText}>
-                <Text style={styles.addConnectionsTitle}>Add your first connection</Text>
+                <Text style={styles.addConnectionsTitle}>{t('checkIn.addFirstConnectionTitle')}</Text>
                 <Text style={styles.addConnectionsSubtitle}>
-                  Connect with family or friends to start sharing check-ins.
+                  {t('checkIn.addFirstConnectionSubtitle')}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#A5B4FC" />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../context/LanguageContext';
 
 const HEADER_BG = require('../../assets/home/checkin-header-bg.png');
 
@@ -13,6 +14,8 @@ export default function CheckInHeader({
   paddingTop,
   onSettingsPress,
 }: CheckInHeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <Image source={HEADER_BG} style={styles.backgroundImage} resizeMode="cover" />
@@ -25,15 +28,15 @@ export default function CheckInHeader({
             onPress={onSettingsPress}
             style={styles.settingsButton}
             activeOpacity={0.75}
-            accessibilityLabel="Check-in settings"
+            accessibilityLabel={t('checkInSettings.title')}
           >
             <Ionicons name="settings-outline" size={20} color="#6366F1" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.textBlock}>
-          <Text style={styles.title}>Safety Check-in</Text>
-          <Text style={styles.subtitle}>Let your contacts know you're safe</Text>
+          <Text style={styles.title}>{t('checkIn.title')}</Text>
+          <Text style={styles.subtitle}>{t('checkIn.subtitle')}</Text>
         </View>
       </View>
     </View>

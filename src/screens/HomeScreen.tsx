@@ -24,12 +24,14 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { useConnection } from '../context/ConnectionContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppSetting } from '../context/AppSettingContext';
+import { useTranslation } from '../context/LanguageContext';
 import { locationService } from '../services/locationService';
 import { incidentProximityService } from '../services/incidentProximityService';
 import { supabase } from '../lib/supabase';
 import type { MainTabParamList, RootStackParamList, Location } from '../types';
 import type { FamilyMember } from '../types';
 import HomeHeader from '../components/HomeHeader';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 const PROMO_FAMILY_IMAGE = require('../../assets/home/promo-family.png');
 const KPI_LOCATION_BG = require('../../assets/home/hero-radar.png');
 
@@ -43,6 +45,7 @@ interface HomeScreenProps {
 }
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
+  const { t } = useTranslation();
   const { connections, locationSharingEnabled, setLocationSharingEnabled, refreshConnections } = useConnection();
   const { user } = useAuth();
   const { hideReportIncident, sosLock } = useAppSetting();
@@ -63,6 +66,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const emergencyNavigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasNavigatedToLockedRef = useRef<boolean>(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState<number>(0);
+  const [showLanguagePicker, setShowLanguagePicker] = useState<boolean>(false);
   const notificationChannelRef = useRef<any>(null);
 
   // Removed automatic location loading on mount
@@ -504,12 +508,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           const permissionResult = await locationService.requestPermissions();
           if (!permissionResult.granted) {
             Alert.alert(
-              'Permission Required',
-              permissionResult.message || 'Location permission is required to share your location with connections.',
+              t('common.permissionRequired'),
+              permissionResult.message || t('home.alertPermissionLocation'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 { 
-                  text: 'Open Settings', 
+                  text: t('common.openSettings'), 
                   onPress: () => Linking.openSettings() 
                 },
               ]
@@ -524,9 +528,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         const initialLocation = await locationService.getHighAccuracyLocation(true); // Request permission if needed
         if (!initialLocation) {
           Alert.alert(
-            'Location Error',
-            'Unable to get your location. Please check your location settings.',
-            [{ text: 'OK' }]
+            t('home.alertLocationErrorTitle'),
+            t('home.alertLocationError'),
+            [{ text: t('common.ok') }]
           );
           setTogglingLocation(false);
           setLocationLoading(false);
@@ -584,9 +588,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     } catch (error) {
       console.error('Error toggling location sharing:', error);
       Alert.alert(
-        'Error',
-        'Failed to update location sharing. Please try again.',
-        [{ text: 'OK' }]
+        t('common.error'),
+        t('home.alertUpdateFailed'),
+        [{ text: t('common.ok') }]
       );
     } finally {
       setTogglingLocation(false);
@@ -600,9 +604,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       // Check if there are any connections
       if (connections.length === 0) {
         Alert.alert(
-          'No Connections',
-          'You need to add connections before sending an offline emergency message.',
-          [{ text: 'OK' }]
+          t('home.alertNoConnectionsTitle'),
+          t('home.alertNoConnectionsSms'),
+          [{ text: t('common.ok') }]
         );
         return;
       }
@@ -612,9 +616,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       
       if (connectionsWithPhone.length === 0) {
         Alert.alert(
-          'No Phone Numbers',
-          'None of your connections have phone numbers saved. Please update your connections with phone numbers.',
-          [{ text: 'OK' }]
+          t('home.alertNoConnectionsTitle'),
+          t('home.alertNoPhoneNumbers'),
+          [{ text: t('common.ok') }]
         );
         return;
       }
@@ -638,7 +642,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       }
 
       // Format location message
-      const userName = user?.name || 'Someone';
+      const userName = user?.name || t('common.someone');
       const timestamp = new Date().toLocaleString();
       let message = `🚨 EMERGENCY ALERT - ${userName} needs help!\n\n`;
       
@@ -669,19 +673,19 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       }));
 
       Alert.alert(
-        'Select Connection',
-        'Choose which connection to send the emergency message to:',
+        t('home.alertSelectConnectionTitle'),
+        t('home.alertSelectConnectionMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           ...connectionOptions,
         ]
       );
     } catch (error) {
       console.error('Error in offline emergency:', error);
       Alert.alert(
-        'Error',
-        'An error occurred while preparing the emergency message. Please try again.',
-        [{ text: 'OK' }]
+        t('common.error'),
+        t('home.alertEmergencyPrepFailed'),
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -690,9 +694,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       if (!connection.phone || connection.phone.trim() === '') {
         Alert.alert(
-          'No Phone Number',
-          `${connection.name} does not have a phone number saved.`,
-          [{ text: 'OK' }]
+          t('home.alertNoConnectionsTitle'),
+          t('home.alertNoPhoneNumber', { name: connection.name }),
+          [{ text: t('common.ok') }]
         );
         return;
       }
@@ -716,9 +720,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         await Linking.openURL(smsUrl);
         smsOpened = true;
         Alert.alert(
-          'Message Ready',
-          `Emergency message is ready to send to ${connection.name}. Please review and send.`,
-          [{ text: 'OK' }]
+          t('common.success'),
+          t('home.alertMessageReady', { name: connection.name }),
+          [{ text: t('common.ok') }]
         );
       } else {
         // Fallback: try with just phone number
@@ -728,15 +732,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           await Linking.openURL(fallbackUrl);
           smsOpened = true;
           Alert.alert(
-            'SMS Opened',
-            `SMS opened for ${connection.name}. Please copy and paste the following location information:\n\n${message}`,
-            [{ text: 'OK' }]
+            t('home.emergencySentTitle'),
+            t('home.alertSmsOpened', { name: connection.name, message }),
+            [{ text: t('common.ok') }]
           );
         } else {
           Alert.alert(
-            'Error',
-            `Unable to open SMS app for ${connection.name}. Please manually send your location.`,
-            [{ text: 'OK' }]
+            t('common.error'),
+            t('home.alertSmsOpenFailed', { name: connection.name }),
+            [{ text: t('common.ok') }]
           );
           return;
         }
@@ -745,6 +749,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       // If SMS was successfully opened, lock the user and navigate to locked screen
       if (smsOpened && user?.id) {
         try {
+          // Start emergency background tracking so location continues when app is backgrounded
+          try {
+            await locationService.startEmergencyTracking(user.id);
+            console.log('Emergency tracking started after offline SMS alert');
+          } catch (trackingError) {
+            console.error('Error starting emergency tracking after offline SMS:', trackingError);
+          }
+
           // Lock the user after offline emergency
           const { error: lockError } = await supabase
             .from('users')
@@ -774,9 +786,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     } catch (error) {
       console.error('Error sending SMS to connection:', error);
       Alert.alert(
-        'Error',
-        `Failed to open SMS for ${connection.name}. Please try again or send manually.`,
-        [{ text: 'OK' }]
+        t('common.error'),
+        t('home.alertSmsFailed', { name: connection.name }),
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -792,20 +804,20 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       if (connections.length === 0) {
         Alert.alert(
-          'No Connections',
-          'You need to add connections before sending an emergency alert.',
-          [{ text: 'OK' }]
+          t('home.alertNoConnectionsTitle'),
+          t('home.alertNoConnectionsSos'),
+          [{ text: t('common.ok') }]
         );
         return;
       }
 
       Alert.alert(
-        'Send Emergency Alert?',
-        `This will send an emergency alert to all ${connections.length} connection${connections.length > 1 ? 's' : ''}.`,
+        t('home.alertSendEmergencyTitle'),
+        t('home.alertSendEmergencyMessage', { count: connections.length }),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Send Emergency Alert',
+            text: t('home.alertSendEmergencyButton'),
             style: 'destructive',
             onPress: async () => {
               try {
@@ -814,13 +826,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 const currentLocation = await locationService.getHighAccuracyLocation(true);
                 if (!currentLocation) {
                   Alert.alert(
-                    'Location Error',
-                    'Unable to get your location. Emergency alert will be sent without location data.',
-                    [{ text: 'OK' }]
+                    t('home.alertLocationErrorTitle'),
+                    t('home.alertLocationErrorSos'),
+                    [{ text: t('common.ok') }]
                   );
                 }
 
-                const userName = user?.name || 'Someone';
+                const userName = user?.name || t('common.someone');
                 const timestamp = new Date();
                 const locationData = currentLocation
                   ? {
@@ -1031,35 +1043,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 const failed = 0;
 
                 if (successful > 0) {
-                  // Start emergency high-accuracy GPS tracking (every 15 minutes, stops when unlocked)
+                  // Start emergency tracking (native background + foreground intervals)
                   if (user?.id) {
                     try {
-                      await locationService.startEmergencyHighAccuracyTracking(user.id);
-                      console.log('Emergency high-accuracy GPS tracking started (every 15 minutes)');
+                      await locationService.startEmergencyTracking(user.id);
+                      console.log('Emergency tracking started (background + foreground)');
                     } catch (error) {
-                      console.error('Error starting emergency high-accuracy GPS tracking:', error);
-                      // Don't fail the alert if tracking fails to start
-                    }
-                  }
-
-                  // Start SOS location tracking (every 3 seconds, circular buffer of 5 rows)
-                  if (user?.id) {
-                    try {
-                      await locationService.startSOSLocationTracking(user.id);
-                      console.log('SOS location tracking started');
-                    } catch (error) {
-                      console.error('Error starting SOS location tracking:', error);
-                      // Don't fail the alert if tracking fails to start
-                    }
-                  }
-
-                  // Start emergency location tracking (every 1 hour)
-                  if (user?.id) {
-                    try {
-                      await locationService.startEmergencyLocationTracking(user.id);
-                      console.log('Emergency location tracking started');
-                    } catch (error) {
-                      console.error('Error starting emergency location tracking:', error);
+                      console.error('Error starting emergency tracking:', error);
                       // Don't fail the alert if tracking fails to start
                     }
                   }
@@ -1127,17 +1117,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   }, 4000);
                 } else {
                   Alert.alert(
-                    'Emergency Alert Failed',
-                    'Unable to send emergency alerts. Please check your connection and try again.',
-                    [{ text: 'OK' }]
+                    t('home.alertEmergencyFailedTitle'),
+                    t('home.alertEmergencyFailed'),
+                    [{ text: t('common.ok') }]
                   );
                 }
               } catch (error) {
                 console.error('Error sending SOS alerts:', error);
                 Alert.alert(
-                  'Error',
-                  'Failed to send emergency alerts. Please try again.',
-                  [{ text: 'OK' }]
+                  t('common.error'),
+                  t('home.alertEmergencySendFailed'),
+                  [{ text: t('common.ok') }]
                 );
               }
             },
@@ -1147,9 +1137,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     } catch (error) {
       console.error('Error in handleSOS:', error);
       Alert.alert(
-        'Error',
-        'An error occurred. Please try again.',
-        [{ text: 'OK' }]
+        t('common.error'),
+        t('home.alertGenericError'),
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -1165,6 +1155,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         unreadCount={unreadNotificationCount}
         userName={user?.name}
         onNotificationsPress={() => navigation.navigate('Notifications')}
+        onLanguagePress={() => setShowLanguagePicker(true)}
       />
 
       <ScrollView
@@ -1181,8 +1172,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             style={styles.promoCard}
           >
             <View style={styles.promoTextWrap}>
-              <Text style={styles.promoTitle}>Stay Safe. Stay Connected.</Text>
-              <Text style={styles.promoSubtitle}>We're here for you and your loved ones.</Text>
+              <Text style={styles.promoTitle}>{t('home.promoTitle')}</Text>
+              <Text style={styles.promoSubtitle}>{t('home.promoSubtitle')}</Text>
             </View>
             <Image source={PROMO_FAMILY_IMAGE} style={styles.promoImage} resizeMode="contain" />
           </LinearGradient>
@@ -1207,9 +1198,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             <View style={styles.kpiContent}>
               <View style={styles.kpiTopRow}>
                 <View style={styles.kpiTextWrap}>
-                  <Text style={styles.kpiLabel}>Location Sharing</Text>
+                  <Text style={styles.kpiLabel}>{t('home.locationSharing')}</Text>
                   <Text style={styles.kpiStatus}>
-                    {togglingLocation ? '···' : locationSharingEnabled ? 'ON' : 'OFF'}
+                    {togglingLocation ? '···' : locationSharingEnabled ? t('common.on') : t('common.off')}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -1231,8 +1222,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               </View>
               <Text style={styles.kpiSubtitle}>
                 {locationSharingEnabled
-                  ? 'Your live location is visible'
-                  : 'Your location is hidden from connections'}
+                  ? t('home.locationVisible')
+                  : t('home.locationHidden')}
               </Text>
             </View>
           </View>
@@ -1247,13 +1238,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               activeOpacity={0.9}
             >
               <View style={styles.emergencyBadge}>
-                <Text style={styles.sosBadgeText}>SOS</Text>
+                <Text style={styles.sosBadgeText}>{t('home.sosBadge')}</Text>
               </View>
               <Text style={[styles.emergencyTitle, styles.emergencyTitleSingleLine]} numberOfLines={1}>
-                Emergency Alert
+                {t('home.emergencyAlert')}
               </Text>
               <Text style={styles.emergencySubtitle} numberOfLines={2}>
-                Notify your{'\n'}connections immediately
+                {t('home.emergencyAlertSubtitle')}
               </Text>
             </TouchableOpacity>
 
@@ -1265,8 +1256,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               <View style={styles.emergencyBadge}>
                 <Ionicons name="chatbubble-ellipses" size={20} color="#F59E0B" />
               </View>
-              <Text style={styles.emergencyTitle}>SMS Emergency</Text>
-              <Text style={styles.emergencySubtitle}>Send emergency alert via text message</Text>
+              <Text style={styles.emergencyTitle}>{t('home.smsEmergency')}</Text>
+              <Text style={styles.emergencySubtitle}>{t('home.smsEmergencySubtitle')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1283,8 +1274,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 <View style={[styles.quickIcon, { backgroundColor: '#FEE2E2' }]}>
                   <Ionicons name="clipboard" size={20} color="#EF4444" />
                 </View>
-                <Text style={styles.quickTitle}>Report Incident</Text>
-                <Text style={styles.quickSubtitle}>Report a safety concern or incident</Text>
+                <Text style={styles.quickTitle}>{t('home.reportIncident')}</Text>
+                <Text style={styles.quickSubtitle}>{t('home.reportIncidentSubtitle')}</Text>
                 <View style={styles.quickArrow}>
                   <Ionicons name="chevron-forward" size={14} color="#EF4444" />
                 </View>
@@ -1298,8 +1289,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 <View style={[styles.quickIcon, { backgroundColor: '#D1FAE5' }]}>
                   <Ionicons name="shield-checkmark" size={20} color="#10B981" />
                 </View>
-                <Text style={styles.quickTitle}>Safety Check-in</Text>
-                <Text style={styles.quickSubtitle}>Let your connections know you're safe</Text>
+                <Text style={styles.quickTitle}>{t('home.safetyCheckIn')}</Text>
+                <Text style={styles.quickSubtitle}>{t('home.safetyCheckInSubtitle')}</Text>
                 <View style={styles.quickArrow}>
                   <Ionicons name="chevron-forward" size={14} color="#10B981" />
                 </View>
@@ -1311,6 +1302,34 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={showLanguagePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLanguagePicker(false)}
+      >
+        <TouchableOpacity
+          style={styles.languageModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowLanguagePicker(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.languageModalCard}>
+            <View style={styles.languageModalHeader}>
+              <Ionicons name="globe-outline" size={22} color="#10B981" />
+              <Text style={styles.languageModalTitle}>{t('languageRegion.language')}</Text>
+              <TouchableOpacity
+                onPress={() => setShowLanguagePicker(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close" size={22} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            <LanguageSwitcher />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Modern Emergency Sent Alert Modal */}
       <Modal
@@ -1334,9 +1353,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 <Ionicons name="checkmark-circle" size={64} color="#10B981" />
               </View>
             </View>
-            <Text style={styles.alertTitle}>Emergency Sent</Text>
+            <Text style={styles.alertTitle}>{t('home.emergencySentTitle')}</Text>
             <Text style={styles.alertMessage}>
-              Your emergency alert has been sent successfully to your connections.
+              {t('home.emergencySentMessage')}
             </Text>
           </Animated.View>
         </View>
@@ -1652,6 +1671,39 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  languageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  languageModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    width: '100%',
+    maxWidth: 340,
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  languageModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  languageModalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
   },
 });
 

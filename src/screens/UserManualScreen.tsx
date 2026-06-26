@@ -9,10 +9,12 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import UserManualHeader from '../components/UserManualHeader';
 import type { RootStackParamList } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 type UserManualScreenNavigationProp = StackNavigationProp<RootStackParamList, 'UserManual'>;
 
@@ -22,9 +24,9 @@ interface UserManualScreenProps {
 
 interface ManualSection {
   id: string;
-  title: string;
+  titleKey: string;
+  descriptionKey: string;
   icon: keyof typeof Ionicons.glyphMap;
-  description: string;
   steps: {
     title: string;
     description: string;
@@ -35,9 +37,9 @@ interface ManualSection {
 const manualSections: ManualSection[] = [
   {
     id: 'getting-started',
-    title: 'Getting Started',
+    titleKey: 'userManual.gettingStarted',
+    descriptionKey: 'userManual.gettingStartedDesc',
     icon: 'rocket-outline',
-    description: 'Learn how to set up your account and get started with FamGuard',
     steps: [
       {
         title: '1. Create Your Account',
@@ -57,9 +59,9 @@ const manualSections: ManualSection[] = [
   },
   {
     id: 'connections',
-    title: 'Managing Connections',
+    titleKey: 'userManual.connections',
+    descriptionKey: 'userManual.connectionsDesc',
     icon: 'people-outline',
-    description: 'Add and manage your trusted connections',
     steps: [
       {
         title: '1. Add a Connection',
@@ -85,9 +87,9 @@ const manualSections: ManualSection[] = [
   },
   {
     id: 'emergency',
-    title: 'Emergency Features',
+    titleKey: 'userManual.emergency',
+    descriptionKey: 'userManual.emergencyDesc',
     icon: 'warning-outline',
-    description: 'Learn how to use emergency alerts and safety features',
     steps: [
       {
         title: '1. Send Emergency Alert',
@@ -107,9 +109,9 @@ const manualSections: ManualSection[] = [
   },
   {
     id: 'incidents',
-    title: 'Incident Reports',
+    titleKey: 'userManual.incidents',
+    descriptionKey: 'userManual.incidentsDesc',
     icon: 'alert-circle-outline',
-    description: 'Report and view safety incidents in your area',
     steps: [
       {
         title: '1. Report an Incident',
@@ -129,9 +131,9 @@ const manualSections: ManualSection[] = [
   },
   {
     id: 'notifications',
-    title: 'Notifications',
+    titleKey: 'userManual.notifications',
+    descriptionKey: 'userManual.notificationsDesc',
     icon: 'notifications-outline',
-    description: 'Stay informed with safety alerts and updates',
     steps: [
       {
         title: '1. View Notifications',
@@ -152,9 +154,9 @@ const manualSections: ManualSection[] = [
   },
   {
     id: 'settings',
-    title: 'Settings & Preferences',
+    titleKey: 'userManual.settings',
+    descriptionKey: 'userManual.settingsDesc',
     icon: 'settings-outline',
-    description: 'Customize your app settings and preferences',
     steps: [
       {
         title: '1. Location Settings',
@@ -175,9 +177,9 @@ const manualSections: ManualSection[] = [
   },
   {
     id: 'maps',
-    title: 'Using Maps',
+    titleKey: 'userManual.maps',
+    descriptionKey: 'userManual.mapsDesc',
     icon: 'map-outline',
-    description: 'Navigate and view locations on the map',
     steps: [
       {
         title: '1. View Connection Location',
@@ -200,6 +202,8 @@ const manualSections: ManualSection[] = [
 const { width } = Dimensions.get('window');
 
 export default function UserManualScreen({ navigation }: UserManualScreenProps) {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
@@ -262,37 +266,15 @@ export default function UserManualScreen({ navigation }: UserManualScreenProps) 
   const progress = ((currentSectionIndex + 1) / manualSections.length) * 100;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={handleSkip}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="close" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>User Manual</Text>
-          <Text style={styles.headerSubtitle}>
-            {currentSectionIndex + 1} of {manualSections.length}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={handleSkip}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.skipButtonText}>Skip</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
-        </View>
-      </View>
+    <View style={styles.container}>
+      <UserManualHeader
+        paddingTop={insets.top + 8}
+        currentSection={currentSectionIndex + 1}
+        totalSections={manualSections.length}
+        progress={progress}
+        onBackPress={handleSkip}
+        onSkipPress={handleSkip}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -305,8 +287,8 @@ export default function UserManualScreen({ navigation }: UserManualScreenProps) 
             <View style={styles.sectionIconContainer}>
               <Ionicons name={currentSection.icon} size={32} color="#DC2626" />
             </View>
-            <Text style={styles.sectionTitle}>{currentSection.title}</Text>
-            <Text style={styles.sectionDescription}>{currentSection.description}</Text>
+            <Text style={styles.sectionTitle}>{t(currentSection.titleKey)}</Text>
+            <Text style={styles.sectionDescription}>{t(currentSection.descriptionKey)}</Text>
           </View>
 
           {/* Current Step */}
@@ -346,7 +328,7 @@ export default function UserManualScreen({ navigation }: UserManualScreenProps) 
       </ScrollView>
 
       {/* Navigation Buttons */}
-      <View style={styles.navigationContainer}>
+      <View style={[styles.navigationContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <TouchableOpacity
           style={[styles.navButton, styles.prevButton, isFirstStep && styles.navButtonDisabled]}
           onPress={handlePrevious}
@@ -355,7 +337,7 @@ export default function UserManualScreen({ navigation }: UserManualScreenProps) 
         >
           <Ionicons name="chevron-back" size={20} color={isFirstStep ? '#9CA3AF' : '#1F2937'} />
           <Text style={[styles.navButtonText, isFirstStep && styles.navButtonTextDisabled]}>
-            Previous
+            {t('common.previous')}
           </Text>
         </TouchableOpacity>
 
@@ -366,12 +348,12 @@ export default function UserManualScreen({ navigation }: UserManualScreenProps) 
           activeOpacity={0.7}
         >
           <Text style={[styles.navButtonText, styles.nextButtonText]}>
-            {isLastStep ? 'Done' : 'Next'}
+            {isLastStep ? t('common.done') : t('common.next')}
           </Text>
           {!isLastStep && <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />}
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -379,57 +361,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  skipButton: {
-    padding: 4,
-  },
-  skipButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#DC2626',
-  },
-  progressContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#DC2626',
-    borderRadius: 2,
   },
   scrollView: {
     flex: 1,
