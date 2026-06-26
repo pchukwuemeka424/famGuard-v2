@@ -1,4 +1,8 @@
+const { generateGoogleServices } = require('./scripts/generate-google-services');
+
 module.exports = ({ config }) => {
+  generateGoogleServices();
+
   // Get environment variables at build time
   // These come from EAS secrets during build
   let EXPO_PUBLIC_SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';

@@ -75,8 +75,10 @@ mapping.txt
 *.log
 logs/
 
+# Firebase / Google (generated from .env at build time)
+google-services.json
+
 # Firebase service account keys (sensitive credentials)
-# Note: google-services.json is safe to commit - it's a public config file
 *-firebase-adminsdk-*.json
 firebase-service-account.json
 .credentials/
