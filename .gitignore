@@ -79,3 +79,6 @@ logs/
 *-firebase-adminsdk-*.json
 firebase-service-account.json
 .credentials/
+
+# Generated from GOOGLE_SERVICES_API_KEY in .env (see scripts/generate-google-services.js)
+google-services.json

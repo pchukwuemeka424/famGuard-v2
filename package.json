@@ -5,15 +5,16 @@
   "scripts": {
     "generate:google-services": "node scripts/generate-google-services.js",
     "prestart": "node scripts/generate-google-services.js",
+    "prebuild": "node scripts/generate-google-services.js",
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "npm run generate:google-services && expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "export:embed": "node scripts/export-with-error-handling.js",
-    "build:android": "eas build --platform android --profile production",
-    "build:android:apk": "eas build --platform android --profile apk --non-interactive",
+    "build:android": "npm run generate:google-services && eas build --platform android --profile production",
+    "build:android:apk": "npm run generate:google-services && eas build --platform android --profile apk --non-interactive",
     "build:ios": "eas build --platform ios --profile production",
-    "build:all": "eas build --platform all --profile production"
+    "build:all": "npm run generate:google-services && eas build --platform all --profile production"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.0",

@@ -1,8 +1,6 @@
 const { generateGoogleServices } = require('./scripts/generate-google-services');
 
 module.exports = ({ config }) => {
-  generateGoogleServices();
-
   // Get environment variables at build time
   // These come from EAS secrets during build
   let EXPO_PUBLIC_SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -10,6 +8,7 @@ module.exports = ({ config }) => {
   let EXPO_PUBLIC_EXPO_PROJECT_ID = process.env.EXPO_PUBLIC_EXPO_PROJECT_ID || '';
   let EXPO_PUBLIC_GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   let EXPO_PUBLIC_DELETE_ACCOUNT_URL = process.env.EXPO_PUBLIC_DELETE_ACCOUNT_URL || 'https://safezone.app/delete-account';
+  const googleServicesApiKey = generateGoogleServices();
 
   // Remove placeholder syntax if present (shouldn't happen but safety check)
   EXPO_PUBLIC_SUPABASE_URL = EXPO_PUBLIC_SUPABASE_URL.replace(/\$\{EXPO_PUBLIC_SUPABASE_URL\}/g, '').trim();
@@ -26,6 +25,7 @@ module.exports = ({ config }) => {
   console.log(`  EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY ? `✅ Set (${EXPO_PUBLIC_SUPABASE_ANON_KEY.substring(0, 20)}...)` : '❌ Missing - App will NOT connect!'}`);
   console.log(`  EXPO_PUBLIC_EXPO_PROJECT_ID: ${EXPO_PUBLIC_EXPO_PROJECT_ID ? `✅ Set (${EXPO_PUBLIC_EXPO_PROJECT_ID})` : '❌ Missing'}`);
   console.log(`  EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ? `✅ Set (${EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.substring(0, 20)}...)` : '❌ Missing - Maps will NOT work!'}`);
+  console.log(`  GOOGLE_SERVICES_API_KEY: ${googleServicesApiKey ? `✅ Set (${googleServicesApiKey.substring(0, 20)}...)` : '❌ Missing - Firebase push may NOT work!'}`);
   console.log('================================================');
   
   // Warn if critical variables are missing
