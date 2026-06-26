@@ -75,9 +75,6 @@ mapping.txt
 *.log
 logs/
 
-# Firebase / Google (generated from .env at build time)
-google-services.json
-
 # Firebase service account keys (sensitive credentials)
 *-firebase-adminsdk-*.json
 firebase-service-account.json

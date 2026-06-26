@@ -23,10 +23,10 @@ function readEnvVar(name) {
 }
 
 function generateGoogleServices() {
-  const apiKey = readEnvVar('GOOGLE_SERVICES_API_KEY');
+  const apiKey = readEnvVar('GOOGLE_SERVICES_API_KEY') || 'YOUR_GOOGLE_SERVICES_API_KEY';
 
-  if (!apiKey) {
-    console.warn('⚠️  GOOGLE_SERVICES_API_KEY not set — google-services.json will have an empty API key');
+  if (apiKey === 'YOUR_GOOGLE_SERVICES_API_KEY') {
+    console.warn('⚠️  GOOGLE_SERVICES_API_KEY not set — using placeholder in google-services.json');
   } else {
     const preview = apiKey.length > 20 ? `${apiKey.substring(0, 20)}...` : apiKey;
     console.log(`✅ Generating google-services.json (key: ${preview})`);
